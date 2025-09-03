@@ -49,7 +49,7 @@ curl -sS "$BASE" \
   -H "Accept: application/json,text/event-stream" \
   -H "MCP-Protocol-Version: $PROTO" \
   -H "Mcp-Session-Id: $SESSION" \
-  -d '{"jsonrpc":"2.0","id":3,"method":"tools/call","params":{"name":"google_sheets_mcp_gs_create_spreadsheet","arguments":{"title":"Yes MCP Spreadsheet"}}}' \
+  -d '{"jsonrpc":"2.0","id":3,"method":"tools/call","params":{"name":"google_sheets_mcp_gs_create_spreadsheet","arguments":{"title":"no MCP Spreadsheet"}}}' \
 | awk '/^data:/{sub(/^data:[ ]*/,"");print}' | jq .
 
 # Test 2: Get values
@@ -69,7 +69,7 @@ curl -sS "$BASE" \
   -H "Accept: application/json,text/event-stream" \
   -H "MCP-Protocol-Version: $PROTO" \
   -H "Mcp-Session-Id: $SESSION" \
-  -d '{"jsonrpc":"2.0","id":5,"method":"tools/call","params":{"name":"google_sheets_mcp_gs_values_update","arguments":{"spreadsheet_id":"1Yid5t5iBOljim_uBvovyllctO9nlKUURtSeMnEwaMC8","range_a1":"A1:B2","values":[["Name","Age"],["John","25"]]}}}' \
+  -d '{"jsonrpc":"2.0","id":5,"method":"tools/call","params":{"name":"google_sheets_mcp_gs_values_update","arguments":{"spreadsheet_id":"1Yid5t5iBOljim_uBvovyllctO9nlKUURtSeMnEwaMC8","range_a1":"A1:B2","values":[["Name","Age"],["Aman","25"]]}}}' \
 | awk '/^data:/{sub(/^data:[ ]*/,"");print}' | jq .
 
 # Test 4: Append values
@@ -99,7 +99,7 @@ curl -sS "$BASE" \
   -H "Accept: application/json,text/event-stream" \
   -H "MCP-Protocol-Version: $PROTO" \
   -H "Mcp-Session-Id: $SESSION" \
-  -d '{"jsonrpc":"2.0","id":8,"method":"tools/call","params":{"name":"google_sheets_mcp_gs_add_sheet","arguments":{"spreadsheet_id":"1Yid5t5iBOljim_uBvovyllctO9nlKUURtSeMnEwaMC8","title":"New MCP Sheet"}}}' \
+  -d '{"jsonrpc":"2.0","id":8,"method":"tools/call","params":{"name":"google_sheets_mcp_gs_add_sheet","arguments":{"spreadsheet_id":"1Yid5t5iBOljim_uBvovyllctO9nlKUURtSeMnEwaMC8","title":"New MCP testing Sheet"}}}' \
 | awk '/^data:/{sub(/^data:[ ]*/,"");print}' | jq .
 
 # Test 7: Delete sheet
@@ -109,7 +109,59 @@ curl -sS "$BASE" \
   -H "Accept: application/json,text/event-stream" \
   -H "MCP-Protocol-Version: $PROTO" \
   -H "Mcp-Session-Id: $SESSION" \
-  -d '{"jsonrpc":"2.0","id":9,"method":"tools/call","params":{"name":"google_sheets_mcp_gs_delete_sheet","arguments":{"spreadsheet_id":"1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms","sheet_id":1}}}' \
+  -d '{"jsonrpc":"2.0","id":9,"method":"tools/call","params":{"name":"google_sheets_mcp_gs_delete_sheet","arguments":{"spreadsheet_id":"1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms","sheet_id":2}}}' \
+| awk '/^data:/{sub(/^data:[ ]*/,"");print}' | jq .
+
+
+# Test Google Slides tools
+# Test 1: Create presentation
+echo "Testing slides_gs_create_presentation..."
+curl -sS "$BASE" \
+  -H "Content-Type: application/json" \
+  -H "Accept: application/json,text/event-stream" \
+  -H "MCP-Protocol-Version: $PROTO" \
+  -H "Mcp-Session-Id: $SESSION" \
+  -d '{"jsonrpc":"2.0","id":10,"method":"tools/call","params":{"name":"google_slides_mcp_gs_create_presentation","arguments":{"title":"MCP Test Presentation"}}}' \
+| awk '/^data:/{sub(/^data:[ ]*/,"");print}' | jq .
+
+# Test 2: Get presentation
+echo "Testing slides_gs_get_presentation..."
+curl -sS "$BASE" \
+  -H "Content-Type: application/json" \
+  -H "Accept: application/json,text/event-stream" \
+  -H "MCP-Protocol-Version: $PROTO" \
+  -H "Mcp-Session-Id: $SESSION" \
+  -d '{"jsonrpc":"2.0","id":11,"method":"tools/call","params":{"name":"google_slides_mcp_gs_get_presentation","arguments":{"presentationId":"1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms"}}}' \
+| awk '/^data:/{sub(/^data:[ ]*/,"");print}' | jq .
+
+# Test 3: Batch update presentation
+echo "Testing slides_gs_batch_update_presentation..."
+curl -sS "$BASE" \
+  -H "Content-Type: application/json" \
+  -H "Accept: application/json,text/event-stream" \
+  -H "MCP-Protocol-Version: $PROTO" \
+  -H "Mcp-Session-Id: $SESSION" \
+  -d '{"jsonrpc":"2.0","id":12,"method":"tools/call","params":{"name":"google_slides_mcp_gs_batch_update_presentation","arguments":{"presentationId":"1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms","requests":[{"createSlide":{"slideLayoutReference":{"predefinedLayout":"TITLE_AND_BODY"}}}]}}}' \
+| awk '/^data:/{sub(/^data:[ ]*/,"");print}' | jq .
+
+# Test 4: Get page
+echo "Testing slides_gs_get_page..."
+curl -sS "$BASE" \
+  -H "Content-Type: application/json" \
+  -H "Accept: application/json,text/event-stream" \
+  -H "MCP-Protocol-Version: $PROTO" \
+  -H "Mcp-Session-Id: $SESSION" \
+  -d '{"jsonrpc":"2.0","id":13,"method":"tools/call","params":{"name":"google_slides_mcp_gs_get_page","arguments":{"presentationId":"1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms","pageObjectId":"slide1"}}}' \
+| awk '/^data:/{sub(/^data:[ ]*/,"");print}' | jq .
+
+# Test 5: Summarize presentation
+echo "Testing slides_gs_summarize_presentation..."
+curl -sS "$BASE" \
+  -H "Content-Type: application/json" \
+  -H "Accept: application/json,text/event-stream" \
+  -H "MCP-Protocol-Version: $PROTO" \
+  -H "Mcp-Session-Id: $SESSION" \
+  -d '{"jsonrpc":"2.0","id":14,"method":"tools/call","params":{"name":"google_slides_mcp_gs_summarize_presentation","arguments":{"presentationId":"1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms","include_notes":false}}}' \
 | awk '/^data:/{sub(/^data:[ ]*/,"");print}' | jq .
 
 
@@ -121,7 +173,7 @@ curl -sS "$BASE" \
   -H "Accept: application/json,text/event-stream" \
   -H "MCP-Protocol-Version: $PROTO" \
   -H "Mcp-Session-Id: $SESSION" \
-  -d '{"jsonrpc":"2.0","id":10,"method":"tools/call","params":{"name":"whatsapp_wa_send_text","arguments":{"to":"1234567890","text":"Hello from MCP!","preview_url":false}}}' \
+  -d '{"jsonrpc":"2.0","id":15,"method":"tools/call","params":{"name":"whatsapp_wa_send_text","arguments":{"to":"8868024688","text":"Hello Bhai!!","preview_url":false}}}' \
 | awk '/^data:/{sub(/^data:[ ]*/,"");print}' | jq .
 
 # Test 2: Send template message
@@ -131,7 +183,7 @@ curl -sS "$BASE" \
   -H "Accept: application/json,text/event-stream" \
   -H "MCP-Protocol-Version: $PROTO" \
   -H "Mcp-Session-Id: $SESSION" \
-  -d '{"jsonrpc":"2.0","id":11,"method":"tools/call","params":{"name":"whatsapp_wa_send_template","arguments":{"to":"1234567890","template_name":"hello_world","language":"en_US"}}}' \
+  -d '{"jsonrpc":"2.0","id":16,"method":"tools/call","params":{"name":"whatsapp_wa_send_template","arguments":{"to":"1234567890","template_name":"hello_world","language":"en_US"}}}' \
 | awk '/^data:/{sub(/^data:[ ]*/,"");print}' | jq .
 
 # Test 3: Send image URL
@@ -141,7 +193,7 @@ curl -sS "$BASE" \
   -H "Accept: application/json,text/event-stream" \
   -H "MCP-Protocol-Version: $PROTO" \
   -H "Mcp-Session-Id: $SESSION" \
-  -d '{"jsonrpc":"2.0","id":12,"method":"tools/call","params":{"name":"whatsapp_wa_send_image_url","arguments":{"to":"1234567890","image_url":"https://example.com/image.jpg","caption":"Check out this image!"}}}' \
+  -d '{"jsonrpc":"2.0","id":17,"method":"tools/call","params":{"name":"whatsapp_wa_send_image_url","arguments":{"to":"1234567890","image_url":"https://example.com/image.jpg","caption":"Check out this image!"}}}' \
 | awk '/^data:/{sub(/^data:[ ]*/,"");print}' | jq .
 
 # Test 4: Send document URL
@@ -151,7 +203,7 @@ curl -sS "$BASE" \
   -H "Accept: application/json,text/event-stream" \
   -H "MCP-Protocol-Version: $PROTO" \
   -H "Mcp-Session-Id: $SESSION" \
-  -d '{"jsonrpc":"2.0","id":13,"method":"tools/call","params":{"name":"whatsapp_wa_send_document_url","arguments":{"to":"1234567890","doc_url":"https://example.com/document.pdf","filename":"document.pdf"}}}' \
+  -d '{"jsonrpc":"2.0","id":18,"method":"tools/call","params":{"name":"whatsapp_wa_send_document_url","arguments":{"to":"1234567890","doc_url":"https://example.com/document.pdf","filename":"document.pdf"}}}' \
 | awk '/^data:/{sub(/^data:[ ]*/,"");print}' | jq .
 
 # Test 5: Send buttons
@@ -161,7 +213,7 @@ curl -sS "$BASE" \
   -H "Accept: application/json,text/event-stream" \
   -H "MCP-Protocol-Version: $PROTO" \
   -H "Mcp-Session-Id: $SESSION" \
-  -d '{"jsonrpc":"2.0","id":14,"method":"tools/call","params":{"name":"whatsapp_wa_send_buttons","arguments":{"to":"1234567890","header_text":"Choose an option","body_text":"Please select one of the following options:","buttons":[{"id":"btn1","title":"Yes"},{"id":"btn2","title":"No"}]}}}' \
+  -d '{"jsonrpc":"2.0","id":19,"method":"tools/call","params":{"name":"whatsapp_wa_send_buttons","arguments":{"to":"1234567890","header_text":"Choose an option","body_text":"Please select one of the following options:","buttons":[{"id":"btn1","title":"Yes"},{"id":"btn2","title":"No"}]}}}' \
 | awk '/^data:/{sub(/^data:[ ]*/,"");print}' | jq .
 
 # Test 6: Mark message as read
@@ -171,7 +223,7 @@ curl -sS "$BASE" \
   -H "Accept: application/json,text/event-stream" \
   -H "MCP-Protocol-Version: $PROTO" \
   -H "Mcp-Session-Id: $SESSION" \
-  -d '{"jsonrpc":"2.0","id":15,"method":"tools/call","params":{"name":"whatsapp_wa_mark_read","arguments":{"message_id":"wamid.1234567890abcdef"}}}' \
+  -d '{"jsonrpc":"2.0","id":20,"method":"tools/call","params":{"name":"whatsapp_wa_mark_read","arguments":{"message_id":"wamid.1234567890abcdef"}}}' \
 | awk '/^data:/{sub(/^data:[ ]*/,"");print}' | jq .
 
 # Test 7: Upload media
@@ -181,5 +233,5 @@ curl -sS "$BASE" \
   -H "Accept: application/json,text/event-stream" \
   -H "MCP-Protocol-Version: $PROTO" \
   -H "Mcp-Session-Id: $SESSION" \
-  -d '{"jsonrpc":"2.0","id":16,"method":"tools/call","params":{"name":"whatsapp_wa_upload_media","arguments":{"file_path":"/path/to/your/file.jpg","mime_type":"image/jpeg"}}}' \
+  -d '{"jsonrpc":"2.0","id":21,"method":"tools/call","params":{"name":"whatsapp_wa_upload_media","arguments":{"file_path":"/path/to/your/file.jpg","mime_type":"image/jpeg"}}}' \
 | awk '/^data:/{sub(/^data:[ ]*/,"");print}' | jq .

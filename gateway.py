@@ -18,7 +18,7 @@ MCP_CONFIG = {
             "args": [WA_SERVER],
             "transport": "stdio",
             "env": {
-                "DRY_RUN": "1", "LOG_LEVEL": "INFO",
+                "DRY_RUN": "0", "LOG_LEVEL": "INFO",
                 "META_WA_ACCESS_TOKEN": os.environ.get("META_WA_ACCESS_TOKEN", ""),
                 "META_WA_PHONE_NUMBER_ID": os.environ.get("META_WA_PHONE_NUMBER_ID", ""),
                 "META_WA_API_VERSION": os.environ.get("META_WA_API_VERSION", "v21.0"),

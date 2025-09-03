@@ -1,28 +1,27 @@
-#!/usr/bin/env python3
-import os
-import json
-import asyncio
-import sys
-from typing import Dict, Any, List
-from dotenv import load_dotenv
+import os, json
+from typing import Any, Dict, List, Optional
+from fastmcp import FastMCP
 from google.oauth2.credentials import Credentials
 from googleapiclient.discovery import build
-from fastmcp import FastMCP, tool
 
-# Load environment variables from .env file
-load_dotenv()
+import logging
+logging.basicConfig(level=os.getenv("LOG_LEVEL", "INFO"))
+DRY_RUN = os.getenv("DRY_RUN", "0") == "1"
 
-# Environment variables for authentication
+def _dry(name: str, **kwargs):
+    logging.info("DRY_RUN: %s(%s)", name, kwargs)
+    return {"dry_run": True, "tool": f"slides_{name}", "args": kwargs}
+
 ACCESS_TOKEN = os.getenv("GSLIDES_ACCESS_TOKEN")
 REFRESH_TOKEN = os.getenv("GSLIDES_REFRESH_TOKEN")
 
+if not ACCESS_TOKEN or not REFRESH_TOKEN:
+    raise RuntimeError("Set GSLIDES_ACCESS_TOKEN and GSLIDES_REFRESH_TOKEN")
+
+mcp = FastMCP("Google Slides MCP (native)")
+
 def get_slides_service():
     """Initialize and return the Google Slides service."""
-    # Check if we have the required tokens
-    if not ACCESS_TOKEN or not REFRESH_TOKEN:
-        print("Warning: GSLIDES_ACCESS_TOKEN and GSLIDES_REFRESH_TOKEN not set - using mock service", file=sys.stderr)
-        return None
-    
     try:
         # Create credentials using only access and refresh tokens
         credentials = Credentials(
@@ -33,69 +32,63 @@ def get_slides_service():
         )
         return build("slides", "v1", credentials=credentials)
     except Exception as e:
-        print(f"Warning: Failed to initialize Google Slides service: {e}", file=sys.stderr)
-        return None
+        logging.error(f"Failed to initialize Google Slides service: {e}")
+        raise RuntimeError(f"Failed to initialize Google Slides service: {e}")
 
-slides_app = FastMCP(
-    title="Google Slides MCP",
-    version="0.1.0",
-    description="A tool-calling server for interacting with Google Slides."
-)
-
-@slides_app.tool()
-def create_presentation(title: str) -> Dict[str, Any]:
+@mcp.tool()
+def gs_create_presentation(title: str) -> Dict[str, Any]:
     """Create a new Google Slides presentation."""
+    if DRY_RUN:
+        return _dry("gs_create_presentation", title=title)
     try:
+        logging.info(f"Creating presentation: {title}")
         service = get_slides_service()
-        if not service:
-            return {"success": False, "error": "Google Slides service not available - please configure OAuth credentials"}
-        
         presentation = service.presentations().create(
             body={"title": title}
         ).execute()
-        return {"success": True, "data": presentation}
+        return presentation
     except Exception as e:
-        return {"success": False, "error": str(e)}
+        logging.error(f"Error creating presentation: {e}")
+        raise
 
-@mcp.tool(slides_app)
-def get_presentation(presentationId: str) -> Dict[str, Any]:
+@mcp.tool()
+def gs_get_presentation(presentationId: str) -> Dict[str, Any]:
     """Get details about a Google Slides presentation."""
+    if DRY_RUN:
+        return _dry("gs_get_presentation", presentationId=presentationId)
     try:
         service = get_slides_service()
-        if not service:
-            return {"success": False, "error": "Google Slides service not available - please configure OAuth credentials"}
-        
         presentation = service.presentations().get(
             presentationId=presentationId
         ).execute()
-        return {"success": True, "data": presentation}
+        return presentation
     except Exception as e:
-        return {"success": False, "error": str(e)}
+        logging.error(f"Error getting presentation: {e}")
+        raise
 
-@mcp.tool(slides_app)
-def batch_update_presentation(presentationId: str, requests: List[Dict[str, Any]]) -> Dict[str, Any]:
+@mcp.tool()
+def gs_batch_update_presentation(presentationId: str, requests: List[Dict[str, Any]]) -> Dict[str, Any]:
     """Apply a batch of updates to a Google Slides presentation."""
+    if DRY_RUN:
+        return _dry("gs_batch_update_presentation", presentationId=presentationId, requests=requests)
     try:
         service = get_slides_service()
-        if not service:
-            return {"success": False, "error": "Google Slides service not available - please configure OAuth credentials"}
-        
         response = service.presentations().batchUpdate(
             presentationId=presentationId,
             body={"requests": requests}
         ).execute()
-        return {"success": True, "data": response}
+        return response
     except Exception as e:
-        return {"success": False, "error": str(e)}
+        logging.error(f"Error batch updating presentation: {e}")
+        raise
 
-@mcp.tool(slides_app)
-def get_page(presentationId: str, pageObjectId: str) -> Dict[str, Any]:
+@mcp.tool()
+def gs_get_page(presentationId: str, pageObjectId: str) -> Dict[str, Any]:
     """Get details about a specific page (slide) in a presentation."""
+    if DRY_RUN:
+        return _dry("gs_get_page", presentationId=presentationId, pageObjectId=pageObjectId)
     try:
         service = get_slides_service()
-        if not service:
-            return {"success": False, "error": "Google Slides service not available - please configure OAuth credentials"}
-        
         presentation = service.presentations().get(
             presentationId=presentationId
         ).execute()
@@ -107,25 +100,25 @@ def get_page(presentationId: str, pageObjectId: str) -> Dict[str, Any]:
         )
         
         if not page:
-            return {"success": False, "error": f"Page with ID {pageObjectId} not found"}
+            raise ValueError(f"Page with ID {pageObjectId} not found")
         
-        return {"success": True, "data": page}
+        return page
     except Exception as e:
-        return {"success": False, "error": str(e)}
+        logging.error(f"Error getting page: {e}")
+        raise
 
-@mcp.tool(slides_app)
-def summarize_presentation(presentationId: str, include_notes: bool = False) -> Dict[str, Any]:
+@mcp.tool()
+def gs_summarize_presentation(presentationId: str, include_notes: bool = False) -> Dict[str, Any]:
     """Extract text content from all slides in a presentation.
     
     Args:
         presentationId: The ID of the presentation to summarize.
         include_notes: Optional. Whether to include speaker notes in the summary.
     """
+    if DRY_RUN:
+        return _dry("gs_summarize_presentation", presentationId=presentationId, include_notes=include_notes)
     try:
         service = get_slides_service()
-        if not service:
-            return {"success": False, "error": "Google Slides service not available - please configure OAuth credentials"}
-        
         presentation = service.presentations().get(
             presentationId=presentationId
         ).execute()
@@ -164,18 +157,10 @@ def summarize_presentation(presentationId: str, include_notes: bool = False) -> 
             
             summary["slides"].append(slide_content)
         
-        return {"success": True, "data": summary}
+        return summary
     except Exception as e:
-        return {"success": False, "error": str(e)}
-
-async def main():
-    """Main function to run the MCP server."""
-    # Check required environment variables
-    if not all([ACCESS_TOKEN, REFRESH_TOKEN]):
-        print("Warning: Missing Google OAuth tokens - server will run in mock mode", file=sys.stderr)
-        print("To enable full functionality, set: GSLIDES_ACCESS_TOKEN, GSLIDES_REFRESH_TOKEN", file=sys.stderr)
-        
-    await slides_app.run_stdio()
+        logging.error(f"Error summarizing presentation: {e}")
+        raise
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    mcp.run()
