@@ -35,9 +35,8 @@ MCP_CONFIG = {
             "transport": "stdio",
             "env": {
                 "DRY_RUN": os.environ.get("DRY_RUN", "0"), "LOG_LEVEL": "INFO",
-                "SERVICE_ACCOUNT_PATH": os.environ.get("SERVICE_ACCOUNT_PATH", ""),
-                "GOOGLE_SCOPES": os.environ.get("GOOGLE_SCOPES", ""),
-                "GSUITE_DELEGATED_EMAIL": os.environ.get("GSUITE_DELEGATED_EMAIL", ""),
+                "GOOGLE_SHEETS_ACCESS_TOKEN": os.environ.get("GOOGLE_SHEETS_ACCESS_TOKEN", ""),
+                "GOOGLE_SHEETS_REFRESH_TOKEN": os.environ.get("GOOGLE_SHEETS_REFRESH_TOKEN", ""),
             },
         },
         "gmail": {
@@ -59,9 +58,8 @@ MCP_CONFIG = {
             "transport": "stdio",
             "env": {
                 "DRY_RUN": os.environ.get("DRY_RUN", "0"), "LOG_LEVEL": "INFO",
-                "SERVICE_ACCOUNT_PATH": os.environ.get("SERVICE_ACCOUNT_PATH", ""),
-                "GOOGLE_SCOPES": os.environ.get("GOOGLE_SCOPES", ""),
-                "GSUITE_DELEGATED_EMAIL": os.environ.get("GSUITE_DELEGATED_EMAIL", ""),
+                "GOOGLE_CHAT_ACCESS_TOKEN": os.environ.get("GOOGLE_CHAT_ACCESS_TOKEN", ""),
+                "GOOGLE_CHAT_REFRESH_TOKEN": os.environ.get("GOOGLE_CHAT_REFRESH_TOKEN", ""),
             },
         },
         "drive": {
@@ -70,9 +68,8 @@ MCP_CONFIG = {
             "transport": "stdio",
             "env": {
                 "DRY_RUN": os.environ.get("DRY_RUN", "0"), "LOG_LEVEL": "INFO",
-                "SERVICE_ACCOUNT_PATH": os.environ.get("SERVICE_ACCOUNT_PATH", ""),
-                "GOOGLE_SCOPES": os.environ.get("GOOGLE_SCOPES", ""),
-                "GSUITE_DELEGATED_EMAIL": os.environ.get("GSUITE_DELEGATED_EMAIL", ""),
+                "GOOGLE_DRIVE_ACCESS_TOKEN": os.environ.get("GOOGLE_DRIVE_ACCESS_TOKEN", ""),
+                "GOOGLE_DRIVE_REFRESH_TOKEN": os.environ.get("GOOGLE_DRIVE_REFRESH_TOKEN", ""),
             },
         },
         "docs": {
@@ -81,9 +78,8 @@ MCP_CONFIG = {
             "transport": "stdio",
             "env": {
                 "DRY_RUN": os.environ.get("DRY_RUN", "0"), "LOG_LEVEL": "INFO",
-                "SERVICE_ACCOUNT_PATH": os.environ.get("SERVICE_ACCOUNT_PATH", ""),
-                "GOOGLE_SCOPES": os.environ.get("GOOGLE_SCOPES", ""),
-                "GSUITE_DELEGATED_EMAIL": os.environ.get("GSUITE_DELEGATED_EMAIL", ""),
+                "GOOGLE_DOCS_ACCESS_TOKEN": os.environ.get("GOOGLE_DOCS_ACCESS_TOKEN", ""),
+                "GOOGLE_DOCS_REFRESH_TOKEN": os.environ.get("GOOGLE_DOCS_REFRESH_TOKEN", ""),
             },
         },
         "calendar": {
@@ -92,9 +88,8 @@ MCP_CONFIG = {
             "transport": "stdio",
             "env": {
                 "DRY_RUN": os.environ.get("DRY_RUN", "0"), "LOG_LEVEL": "INFO",
-                "SERVICE_ACCOUNT_PATH": os.environ.get("SERVICE_ACCOUNT_PATH", ""),
-                "GOOGLE_SCOPES": os.environ.get("GOOGLE_SCOPES", ""),
-                "GSUITE_DELEGATED_EMAIL": os.environ.get("GSUITE_DELEGATED_EMAIL", ""),
+                "GOOGLE_CALENDAR_ACCESS_TOKEN": os.environ.get("GOOGLE_CALENDAR_ACCESS_TOKEN", ""),
+                "GOOGLE_CALENDAR_REFRESH_TOKEN": os.environ.get("GOOGLE_CALENDAR_REFRESH_TOKEN", ""),
             },
         },
         "hubspot": {

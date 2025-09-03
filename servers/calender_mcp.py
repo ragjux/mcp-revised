@@ -1,19 +1,15 @@
 #!/usr/bin/env python3
 """
-Google Calendar MCP Server - FastMCP version
+Google Calendar MCP Server - Token-only authentication
 A Model Context Protocol (MCP) server for Google Calendar operations.
 """
 
 import os
 import json
+import httpx
 import datetime
 from typing import Any, Dict, List, Optional
 from fastmcp import FastMCP
-from google.oauth2.credentials import Credentials
-from google.oauth2 import service_account
-from google.auth.transport.requests import Request
-from google_auth_oauthlib.flow import InstalledAppFlow
-from googleapiclient.discovery import build
 
 import logging
 logging.basicConfig(level=os.getenv("LOG_LEVEL", "INFO"))
@@ -23,201 +19,209 @@ def _dry(name: str, **kwargs):
     logging.info("DRY_RUN: %s(%s)", name, kwargs)
     return {"dry_run": True, "tool": f"calendar_{name}", "args": kwargs}
 
-SCOPES = [
-    'https://www.googleapis.com/auth/calendar.readonly',
-    'https://www.googleapis.com/auth/calendar.events',
-    'https://www.googleapis.com/auth/calendar'
-]
+# Environment variables for token-only authentication
+ACCESS_TOKEN = os.getenv("GOOGLE_CALENDAR_ACCESS_TOKEN", "")
+REFRESH_TOKEN = os.getenv("GOOGLE_CALENDAR_REFRESH_TOKEN", "")
 
-TOKEN_PATH = os.getenv('TOKEN_PATH', 'token.json')
-CREDENTIALS_PATH = os.getenv('CREDENTIALS_PATH', 'credentials.json')
-SERVICE_ACCOUNT_PATH = os.getenv('SERVICE_ACCOUNT_PATH', '')
+if not ACCESS_TOKEN or not REFRESH_TOKEN:
+    raise RuntimeError("Set GOOGLE_CALENDAR_ACCESS_TOKEN and GOOGLE_CALENDAR_REFRESH_TOKEN environment variables")
 
-if not CREDENTIALS_PATH and not SERVICE_ACCOUNT_PATH:
-    raise RuntimeError("Set CREDENTIALS_PATH or SERVICE_ACCOUNT_PATH environment variable")
+CALENDAR_BASE = "https://www.googleapis.com/calendar/v3"
 
-mcp = FastMCP("Google Calendar MCP (native)")
+mcp = FastMCP("Google Calendar MCP (Token-only)")
 
-def _get_calendar_service():
-    """Get authenticated Calendar service."""
-    creds = None
-    
-    # Try service account first
-    if SERVICE_ACCOUNT_PATH and os.path.exists(SERVICE_ACCOUNT_PATH):
-        creds = service_account.Credentials.from_service_account_file(
-            SERVICE_ACCOUNT_PATH, scopes=SCOPES
-        )
-    else:
-        # OAuth flow
-        if os.path.exists(TOKEN_PATH):
-            with open(TOKEN_PATH, 'r') as token:
-                creds = Credentials.from_authorized_user_info(json.load(token), SCOPES)
-        
-        if not creds or not creds.valid:
-            if creds and creds.expired and creds.refresh_token:
-                creds.refresh(Request())
-            else:
-                flow = InstalledAppFlow.from_client_secrets_file(CREDENTIALS_PATH, SCOPES)
-                creds = flow.run_local_server(port=0)
-                with open(TOKEN_PATH, 'w') as token:
-                    token.write(creds.to_json())
-    
-    return build('calendar', 'v3', credentials=creds)
+def _auth_header() -> Dict[str, str]:
+    """Get authorization header with access token."""
+    return {"Authorization": f"Bearer {ACCESS_TOKEN}", "Content-Type": "application/json"}
 
 @mcp.tool()
 def calendar_list_events(calendar_id: str = 'primary', max_results: int = 10) -> Dict[str, Any]:
-    """List upcoming calendar events."""
+    """List events from a calendar."""
     if DRY_RUN:
-        return _dry("list_events", calendar_id=calendar_id, max_results=max_results)
+        return _dry("calendar_list_events", calendar_id=calendar_id, max_results=max_results)
     
-    try:
-        service = _get_calendar_service()
-        
-        now = datetime.datetime.utcnow().isoformat() + 'Z'
-        events_result = service.events().list(
-            calendarId=calendar_id,
-            timeMin=now,
-            maxResults=max_results,
-            singleEvents=True,
-            orderBy='startTime'
-        ).execute()
-        
-        events = events_result.get('items', [])
-        
-        event_list = []
-        for event in events:
-            start = event['start'].get('dateTime', event['start'].get('date'))
-            event_list.append({
-                "id": event['id'],
-                "summary": event.get('summary', 'No title'),
-                "start": start,
-                "end": event['end'].get('dateTime', event['end'].get('date'))
-            })
-        
-        return {"events": event_list, "count": len(event_list)}
-    except Exception as e:
-        return {"status": "error", "message": f"Failed to list calendar events: {e}"}
+    params = {
+        "maxResults": max_results,
+        "singleEvents": True,
+        "orderBy": "startTime"
+    }
+    
+    with httpx.Client(timeout=30) as c:
+        r = c.get(f"{CALENDAR_BASE}/calendars/{calendar_id}/events", 
+                 headers=_auth_header(), params=params)
+        r.raise_for_status()
+        return r.json()
 
 @mcp.tool()
-def calendar_create_event(
-    summary: str, 
-    start_time: str, 
-    end_time: str, 
-    description: str = "",
-    calendar_id: str = 'primary'
-) -> Dict[str, Any]:
-    """Create a new calendar event."""
+def calendar_get_event(calendar_id: str, event_id: str) -> Dict[str, Any]:
+    """Get a specific event by ID."""
     if DRY_RUN:
-        return _dry("create_event", summary=summary, start_time=start_time, 
-                   end_time=end_time, description=description, calendar_id=calendar_id)
+        return _dry("calendar_get_event", calendar_id=calendar_id, event_id=event_id)
     
-    try:
-        service = _get_calendar_service()
-        
-        event = {
-            'summary': summary,
-            'description': description,
-            'start': {
-                'dateTime': start_time,
-                'timeZone': 'UTC',
-            },
-            'end': {
-                'dateTime': end_time,
-                'timeZone': 'UTC',
-            },
+    with httpx.Client(timeout=30) as c:
+        r = c.get(f"{CALENDAR_BASE}/calendars/{calendar_id}/events/{event_id}", 
+                 headers=_auth_header())
+        r.raise_for_status()
+        return r.json()
+
+@mcp.tool()
+def calendar_create_event(calendar_id: str, summary: str, start_time: str, 
+                         end_time: str, description: Optional[str] = None,
+                         location: Optional[str] = None) -> Dict[str, Any]:
+    """Create a new event."""
+    if DRY_RUN:
+        return _dry("calendar_create_event", calendar_id=calendar_id, summary=summary, 
+                   start_time=start_time, end_time=end_time, description=description, location=location)
+    
+    event = {
+        "summary": summary,
+        "start": {
+            "dateTime": start_time,
+            "timeZone": "UTC"
+        },
+        "end": {
+            "dateTime": end_time,
+            "timeZone": "UTC"
         }
-        
-        result = service.events().insert(
-            calendarId=calendar_id, body=event
-        ).execute()
-        
-        return {"status": "success", "event_id": result.get('id')}
-    except Exception as e:
-        return {"status": "error", "message": f"Failed to create calendar event: {e}"}
+    }
+    
+    if description:
+        event["description"] = description
+    if location:
+        event["location"] = location
+    
+    with httpx.Client(timeout=30) as c:
+        r = c.post(f"{CALENDAR_BASE}/calendars/{calendar_id}/events", 
+                  headers=_auth_header(), json=event)
+        r.raise_for_status()
+        return r.json()
+
+@mcp.tool()
+def calendar_update_event(calendar_id: str, event_id: str, summary: Optional[str] = None,
+                         start_time: Optional[str] = None, end_time: Optional[str] = None,
+                         description: Optional[str] = None, location: Optional[str] = None) -> Dict[str, Any]:
+    """Update an existing event."""
+    if DRY_RUN:
+        return _dry("calendar_update_event", calendar_id=calendar_id, event_id=event_id, 
+                   summary=summary, start_time=start_time, end_time=end_time, 
+                   description=description, location=location)
+    
+    # First get the existing event
+    existing_event = calendar_get_event(calendar_id, event_id)
+    
+    # Update fields if provided
+    if summary:
+        existing_event["summary"] = summary
+    if start_time:
+        existing_event["start"] = {
+            "dateTime": start_time,
+            "timeZone": "UTC"
+        }
+    if end_time:
+        existing_event["end"] = {
+            "dateTime": end_time,
+            "timeZone": "UTC"
+        }
+    if description:
+        existing_event["description"] = description
+    if location:
+        existing_event["location"] = location
+    
+    with httpx.Client(timeout=30) as c:
+        r = c.put(f"{CALENDAR_BASE}/calendars/{calendar_id}/events/{event_id}", 
+                 headers=_auth_header(), json=existing_event)
+        r.raise_for_status()
+        return r.json()
+
+@mcp.tool()
+def calendar_delete_event(calendar_id: str, event_id: str) -> Dict[str, Any]:
+    """Delete an event."""
+    if DRY_RUN:
+        return _dry("calendar_delete_event", calendar_id=calendar_id, event_id=event_id)
+    
+    with httpx.Client(timeout=30) as c:
+        r = c.delete(f"{CALENDAR_BASE}/calendars/{calendar_id}/events/{event_id}", 
+                    headers=_auth_header())
+        r.raise_for_status()
+        return {"success": True, "event_id": event_id}
 
 @mcp.tool()
 def calendar_list_calendars() -> Dict[str, Any]:
-    """List all accessible calendars."""
+    """List all calendars."""
     if DRY_RUN:
-        return _dry("list_calendars")
+        return _dry("calendar_list_calendars")
     
-    try:
-        service = _get_calendar_service()
-        
-        calendars = service.calendarList().list().execute()
-        calendar_list = calendars.get('items', [])
-        
-        calendars_data = []
-        for calendar in calendar_list:
-            calendars_data.append({
-                "id": calendar['id'],
-                "summary": calendar.get('summary', 'No title'),
-                "primary": calendar.get('primary', False),
-                "access_role": calendar.get('accessRole', 'Unknown')
-            })
-        
-        return {"calendars": calendars_data, "count": len(calendars_data)}
-    except Exception as e:
-        return {"status": "error", "message": f"Failed to list calendars: {e}"}
+    with httpx.Client(timeout=30) as c:
+        r = c.get(f"{CALENDAR_BASE}/users/me/calendarList", headers=_auth_header())
+        r.raise_for_status()
+        return r.json()
 
 @mcp.tool()
-def calendar_modify_event(
-    event_id: str,
-    summary: str = None,
-    description: str = None,
-    start_time: str = None,
-    end_time: str = None,
-    calendar_id: str = 'primary'
-) -> Dict[str, Any]:
-    """Modify an existing calendar event."""
+def calendar_get_calendar(calendar_id: str) -> Dict[str, Any]:
+    """Get calendar details."""
     if DRY_RUN:
-        return _dry("modify_event", event_id=event_id, summary=summary,
-                   description=description, start_time=start_time, 
-                   end_time=end_time, calendar_id=calendar_id)
+        return _dry("calendar_get_calendar", calendar_id=calendar_id)
     
-    try:
-        service = _get_calendar_service()
-        
-        # Get existing event
-        event = service.events().get(
-            calendarId=calendar_id, eventId=event_id
-        ).execute()
-        
-        # Update fields if provided
-        if summary:
-            event['summary'] = summary
-        if description is not None:
-            event['description'] = description
-        if start_time:
-            event['start']['dateTime'] = start_time
-        if end_time:
-            event['end']['dateTime'] = end_time
-        
-        # Update event
-        result = service.events().update(
-            calendarId=calendar_id, eventId=event_id, body=event
-        ).execute()
-        
-        return {"status": "success", "event_id": result.get('id')}
-    except Exception as e:
-        return {"status": "error", "message": f"Failed to modify calendar event: {e}"}
+    with httpx.Client(timeout=30) as c:
+        r = c.get(f"{CALENDAR_BASE}/calendars/{calendar_id}", headers=_auth_header())
+        r.raise_for_status()
+        return r.json()
 
 @mcp.tool()
-def calendar_delete_event(event_id: str, calendar_id: str = 'primary') -> Dict[str, Any]:
-    """Delete a calendar event."""
+def calendar_create_calendar(summary: str, description: Optional[str] = None, 
+                           time_zone: str = "UTC") -> Dict[str, Any]:
+    """Create a new calendar."""
     if DRY_RUN:
-        return _dry("delete_event", event_id=event_id, calendar_id=calendar_id)
+        return _dry("calendar_create_calendar", summary=summary, description=description, time_zone=time_zone)
     
-    try:
-        service = _get_calendar_service()
-        
-        service.events().delete(
-            calendarId=calendar_id, eventId=event_id
-        ).execute()
-        
-        return {"status": "success", "message": "Event deleted successfully"}
-    except Exception as e:
-        return {"status": "error", "message": f"Failed to delete calendar event: {e}"}
+    calendar = {
+        "summary": summary,
+        "timeZone": time_zone
+    }
+    
+    if description:
+        calendar["description"] = description
+    
+    with httpx.Client(timeout=30) as c:
+        r = c.post(f"{CALENDAR_BASE}/calendars", headers=_auth_header(), json=calendar)
+        r.raise_for_status()
+        return r.json()
+
+@mcp.tool()
+def calendar_search_events(calendar_id: str, query: str, max_results: int = 10) -> Dict[str, Any]:
+    """Search for events in a calendar."""
+    if DRY_RUN:
+        return _dry("calendar_search_events", calendar_id=calendar_id, query=query, max_results=max_results)
+    
+    params = {
+        "q": query,
+        "maxResults": max_results,
+        "singleEvents": True,
+        "orderBy": "startTime"
+    }
+    
+    with httpx.Client(timeout=30) as c:
+        r = c.get(f"{CALENDAR_BASE}/calendars/{calendar_id}/events", 
+                 headers=_auth_header(), params=params)
+        r.raise_for_status()
+        return r.json()
+
+@mcp.tool()
+def calendar_get_free_busy(calendar_ids: List[str], time_min: str, time_max: str) -> Dict[str, Any]:
+    """Get free/busy information for calendars."""
+    if DRY_RUN:
+        return _dry("calendar_get_free_busy", calendar_ids=calendar_ids, time_min=time_min, time_max=time_max)
+    
+    payload = {
+        "timeMin": time_min,
+        "timeMax": time_max,
+        "items": [{"id": cal_id} for cal_id in calendar_ids]
+    }
+    
+    with httpx.Client(timeout=30) as c:
+        r = c.post(f"{CALENDAR_BASE}/freeBusy", headers=_auth_header(), json=payload)
+        r.raise_for_status()
+        return r.json()
 
 if __name__ == "__main__":
     mcp.run()

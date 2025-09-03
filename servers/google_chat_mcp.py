@@ -1,190 +1,201 @@
 #!/usr/bin/env python3
 """
-Google-Chat MCP Server – Google Chat Provider
-A Model Context Protocol (MCP) server for Google-Chat operations.
+Google Chat MCP Server - Token-only authentication
+A Model Context Protocol (MCP) server for Google Chat operations.
 """
 
 import os
 import json
+import httpx
 from typing import Any, Dict, List, Optional
 from fastmcp import FastMCP
-from google.oauth2 import service_account
-from google.oauth2.credentials import Credentials
-from google.auth.transport.requests import Request
-from google_auth_oauthlib.flow import InstalledAppFlow
-from googleapiclient.discovery import build
 
 import logging
 logging.basicConfig(level=os.getenv("LOG_LEVEL", "INFO"))
 DRY_RUN = os.getenv("DRY_RUN", "0") == "1"
 
-
 def _dry(name: str, **kwargs):
     logging.info("DRY_RUN: %s(%s)", name, kwargs)
     return {"dry_run": True, "tool": f"chat_{name}", "args": kwargs}
 
+# Environment variables for token-only authentication
+ACCESS_TOKEN = os.getenv("GOOGLE_CHAT_ACCESS_TOKEN", "")
+REFRESH_TOKEN = os.getenv("GOOGLE_CHAT_REFRESH_TOKEN", "")
 
-SCOPES = [
-    "https://www.googleapis.com/auth/chat.spaces",
-    "https://www.googleapis.com/auth/chat.messages",
-    "https://www.googleapis.com/auth/chat.messages.readonly",
-    "https://www.googleapis.com/auth/chat.bot"
-]
+if not ACCESS_TOKEN or not REFRESH_TOKEN:
+    raise RuntimeError("Set GOOGLE_CHAT_ACCESS_TOKEN and GOOGLE_CHAT_REFRESH_TOKEN environment variables")
 
-TOKEN_PATH = os.getenv("TOKEN_PATH", "token.json")
-CREDENTIALS_PATH = os.getenv("CREDENTIALS_PATH", "credentials.json")
-SERVICE_ACCOUNT_PATH = os.getenv("SERVICE_ACCOUNT_PATH", "")
+CHAT_BASE = "https://chat.googleapis.com/v1"
 
-if not CREDENTIALS_PATH and not SERVICE_ACCOUNT_PATH:
-    raise RuntimeError("Set CREDENTIALS_PATH or SERVICE_ACCOUNT_PATH environment variable")
+mcp = FastMCP("Google Chat MCP (Token-only)")
 
-mcp = FastMCP("Google Chat MCP (native)")
-
-
-def _get_chat_service():
-    """
-    Get authenticated Google Chat service.
-    """
-    creds = None
-
-    if SERVICE_ACCOUNT_PATH and os.path.exists(SERVICE_ACCOUNT_PATH):
-        creds = service_account.Credentials.from_service_account_file(
-            SERVICE_ACCOUNT_PATH, scopes=SCOPES
-        )
-    else:
-        if os.path.exists(TOKEN_PATH):
-            with open(TOKEN_PATH, "r") as token:
-                creds = Credentials.from_authorized_user_info(json.load(token), SCOPES)
-        if not creds or not creds.valid:
-            if creds and creds.expired and creds.refresh_token:
-                creds.refresh(Request())
-            else:
-                flow = InstalledAppFlow.from_client_secrets_file(CREDENTIALS_PATH, SCOPES)
-                creds = flow.run_local_server(port=0)
-                with open(TOKEN_PATH, "w") as token:
-                    token.write(creds.to_json())
-
-    return build("chat", "v1", credentials=creds)
-
+def _auth_header() -> Dict[str, str]:
+    """Get authorization header with access token."""
+    return {"Authorization": f"Bearer {ACCESS_TOKEN}", "Content-Type": "application/json"}
 
 @mcp.tool()
 def chat_get_spaces() -> Dict[str, Any]:
-    """
-    List all Google Chat spaces the bot has access to.
-    """
+    """List all Google Chat spaces the bot has access to."""
     if DRY_RUN:
-        return _dry("get_spaces")
-
-    try:
-        service = _get_chat_service()
-        response = service.spaces().list(pageSize=100).execute()
-        spaces = response.get("spaces", [])
-        return {"spaces": spaces, "count": len(spaces)}
-    except Exception as e:
-        return {"status": "error", "message": f"Failed to list spaces: {e}"}
-
+        return _dry("chat_get_spaces")
+    
+    with httpx.Client(timeout=30) as c:
+        r = c.get(f"{CHAT_BASE}/spaces", headers=_auth_header())
+        r.raise_for_status()
+        return r.json()
 
 @mcp.tool()
-def chat_get_space_messages(
-    space_name: str,
-    start_time: Optional[str] = None,
-    end_time: Optional[str] = None,
-    max_results: int = 50
-) -> Dict[str, Any]:
-    """
-    List messages from a specific Google Chat space with optional time filtering.
-    """
+def chat_get_space(space_name: str) -> Dict[str, Any]:
+    """Get details about a specific space."""
     if DRY_RUN:
-        return _dry(
-            "get_space_messages",
-            space_name=space_name,
-            start_time=start_time,
-            end_time=end_time,
-            max_results=max_results,
-        )
-
-    try:
-        service = _get_chat_service()
-        params: Dict[str, Any] = {"pageSize": max_results}
-        filters: List[str] = []
-        if start_time:
-            filters.append(f"create_time>=\"{start_time}\"")
-        if end_time:
-            filters.append(f"create_time<=\"{end_time}\"")
-        if filters:
-            params["filter"] = " AND ".join(filters)
-
-        response = service.spaces().messages().list(parent=space_name, **params).execute()
-        messages = response.get("messages", [])
-        return {"space": space_name, "messages": messages, "count": len(messages)}
-    except Exception as e:
-        return {"status": "error", "message": f"Failed to list messages: {e}"}
-
+        return _dry("chat_get_space", space_name=space_name)
+    
+    with httpx.Client(timeout=30) as c:
+        r = c.get(f"{CHAT_BASE}/{space_name}", headers=_auth_header())
+        r.raise_for_status()
+        return r.json()
 
 @mcp.tool()
-def chat_send_message(
-    space_name: str,
-    text: str,
-    thread_key: Optional[str] = None
-) -> Dict[str, Any]:
-    """
-    Send a message to a Google Chat space.
-    """
+def chat_list_messages(space_name: str, page_size: int = 50, page_token: Optional[str] = None) -> Dict[str, Any]:
+    """List messages in a space."""
     if DRY_RUN:
-        return _dry("send_message", space_name=space_name, text=text, thread_key=thread_key)
-
-    try:
-        service = _get_chat_service()
-        body: Dict[str, Any] = {"text": text}
-        if thread_key:
-            body["threadKey"] = thread_key
-        result = service.spaces().messages().create(parent=space_name, body=body).execute()
-        return {"status": "success", "message": result}
-    except Exception as e:
-        return {"status": "error", "message": f"Failed to send message: {e}"}
-
+        return _dry("chat_list_messages", space_name=space_name, page_size=page_size, page_token=page_token)
+    
+    params = {"pageSize": page_size}
+    if page_token:
+        params["pageToken"] = page_token
+    
+    with httpx.Client(timeout=30) as c:
+        r = c.get(f"{CHAT_BASE}/{space_name}/messages", headers=_auth_header(), params=params)
+        r.raise_for_status()
+        return r.json()
 
 @mcp.tool()
-def chat_update_message(
-    space_name: str,
-    message_id: str,
-    text: str
-) -> Dict[str, Any]:
-    """
-    Update a message in a Google Chat space.
-    """
+def chat_get_message(message_name: str) -> Dict[str, Any]:
+    """Get a specific message by name."""
     if DRY_RUN:
-        return _dry("update_message", space_name=space_name, message_id=message_id, text=text)
-
-    try:
-        service = _get_chat_service()
-        body = {"text": text}
-        result = service.spaces().messages().update(
-            name=f"{space_name}/messages/{message_id}", body=body
-        ).execute()
-        return {"status": "success", "message": result}
-    except Exception as e:
-        return {"status": "error", "message": f"Failed to update message: {e}"}
-
+        return _dry("chat_get_message", message_name=message_name)
+    
+    with httpx.Client(timeout=30) as c:
+        r = c.get(f"{CHAT_BASE}/{message_name}", headers=_auth_header())
+        r.raise_for_status()
+        return r.json()
 
 @mcp.tool()
-def chat_delete_message(
-    space_name: str,
-    message_id: str
-) -> Dict[str, Any]:
-    """
-    Delete a message from a Google Chat space.
-    """
+def chat_create_message(space_name: str, text: str, thread_key: Optional[str] = None) -> Dict[str, Any]:
+    """Create a message in a space."""
     if DRY_RUN:
-        return _dry("delete_message", space_name=space_name, message_id=message_id)
+        return _dry("chat_create_message", space_name=space_name, text=text, thread_key=thread_key)
+    
+    payload = {
+        "text": text
+    }
+    
+    if thread_key:
+        payload["thread"] = {"name": thread_key}
+    
+    with httpx.Client(timeout=30) as c:
+        r = c.post(f"{CHAT_BASE}/{space_name}/messages", headers=_auth_header(), json=payload)
+        r.raise_for_status()
+        return r.json()
 
-    try:
-        service = _get_chat_service()
-        service.spaces().messages().delete(name=f"{space_name}/messages/{message_id}").execute()
-        return {"status": "success", "message": "Message deleted"}
-    except Exception as e:
-        return {"status": "error", "message": f"Failed to delete message: {e}"}
+@mcp.tool()
+def chat_update_message(message_name: str, text: str) -> Dict[str, Any]:
+    """Update an existing message."""
+    if DRY_RUN:
+        return _dry("chat_update_message", message_name=message_name, text=text)
+    
+    payload = {
+        "text": text
+    }
+    
+    with httpx.Client(timeout=30) as c:
+        r = c.put(f"{CHAT_BASE}/{message_name}", headers=_auth_header(), json=payload)
+        r.raise_for_status()
+        return r.json()
 
+@mcp.tool()
+def chat_delete_message(message_name: str) -> Dict[str, Any]:
+    """Delete a message."""
+    if DRY_RUN:
+        return _dry("chat_delete_message", message_name=message_name)
+    
+    with httpx.Client(timeout=30) as c:
+        r = c.delete(f"{CHAT_BASE}/{message_name}", headers=_auth_header())
+        r.raise_for_status()
+        return {"success": True, "message_name": message_name}
+
+@mcp.tool()
+def chat_create_card_message(space_name: str, card_title: str, card_text: str, 
+                           thread_key: Optional[str] = None) -> Dict[str, Any]:
+    """Create a message with a card in a space."""
+    if DRY_RUN:
+        return _dry("chat_create_card_message", space_name=space_name, card_title=card_title, 
+                   card_text=card_text, thread_key=thread_key)
+    
+    payload = {
+        "cards": [{
+            "header": {
+                "title": card_title
+            },
+            "sections": [{
+                "widgets": [{
+                    "textParagraph": {
+                        "text": card_text
+                    }
+                }]
+            }]
+        }]
+    }
+    
+    if thread_key:
+        payload["thread"] = {"name": thread_key}
+    
+    with httpx.Client(timeout=30) as c:
+        r = c.post(f"{CHAT_BASE}/{space_name}/messages", headers=_auth_header(), json=payload)
+        r.raise_for_status()
+        return r.json()
+
+@mcp.tool()
+def chat_create_thread(space_name: str, name: str) -> Dict[str, Any]:
+    """Create a thread in a space."""
+    if DRY_RUN:
+        return _dry("chat_create_thread", space_name=space_name, name=name)
+    
+    payload = {
+        "name": name
+    }
+    
+    with httpx.Client(timeout=30) as c:
+        r = c.post(f"{CHAT_BASE}/{space_name}/threads", headers=_auth_header(), json=payload)
+        r.raise_for_status()
+        return r.json()
+
+@mcp.tool()
+def chat_list_threads(space_name: str, page_size: int = 50, page_token: Optional[str] = None) -> Dict[str, Any]:
+    """List threads in a space."""
+    if DRY_RUN:
+        return _dry("chat_list_threads", space_name=space_name, page_size=page_size, page_token=page_token)
+    
+    params = {"pageSize": page_size}
+    if page_token:
+        params["pageToken"] = page_token
+    
+    with httpx.Client(timeout=30) as c:
+        r = c.get(f"{CHAT_BASE}/{space_name}/threads", headers=_auth_header(), params=params)
+        r.raise_for_status()
+        return r.json()
+
+@mcp.tool()
+def chat_get_thread(thread_name: str) -> Dict[str, Any]:
+    """Get details about a specific thread."""
+    if DRY_RUN:
+        return _dry("chat_get_thread", thread_name=thread_name)
+    
+    with httpx.Client(timeout=30) as c:
+        r = c.get(f"{CHAT_BASE}/{thread_name}", headers=_auth_header())
+        r.raise_for_status()
+        return r.json()
 
 if __name__ == "__main__":
     mcp.run()

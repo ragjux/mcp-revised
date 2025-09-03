@@ -1,18 +1,14 @@
 #!/usr/bin/env python3
 """
-Google Docs MCP Server - FastMCP version
+Google Docs MCP Server - Token-only authentication
 A Model Context Protocol (MCP) server for Google Docs operations.
 """
 
 import os
 import json
+import httpx
 from typing import Any, Dict, List, Optional
 from fastmcp import FastMCP
-from google.oauth2.credentials import Credentials
-from google.oauth2 import service_account
-from google.auth.transport.requests import Request
-from google_auth_oauthlib.flow import InstalledAppFlow
-from googleapiclient.discovery import build
 
 import logging
 logging.basicConfig(level=os.getenv("LOG_LEVEL", "INFO"))
@@ -22,279 +18,235 @@ def _dry(name: str, **kwargs):
     logging.info("DRY_RUN: %s(%s)", name, kwargs)
     return {"dry_run": True, "tool": f"docs_{name}", "args": kwargs}
 
-SCOPES = [
-    'https://www.googleapis.com/auth/documents.readonly',
-    'https://www.googleapis.com/auth/documents',
-    'https://www.googleapis.com/auth/drive'
-]
+# Environment variables for token-only authentication
+ACCESS_TOKEN = os.getenv("GOOGLE_DOCS_ACCESS_TOKEN", "")
+REFRESH_TOKEN = os.getenv("GOOGLE_DOCS_REFRESH_TOKEN", "")
 
-# Service account credentials
-SERVICE_ACCOUNT_PATH = os.getenv("SERVICE_ACCOUNT_PATH", "")
-GSUITE_DELEGATED_EMAIL = os.getenv("GSUITE_DELEGATED_EMAIL", "")
+if not ACCESS_TOKEN or not REFRESH_TOKEN:
+    raise RuntimeError("Set GOOGLE_DOCS_ACCESS_TOKEN and GOOGLE_DOCS_REFRESH_TOKEN environment variables")
 
-mcp = FastMCP("Google Docs MCP (native)")
+DOCS_BASE = "https://docs.googleapis.com/v1/documents"
+DRIVE_BASE = "https://www.googleapis.com/drive/v3"
 
-def _get_docs_service():
-    """Get authenticated Google Docs service."""
-    if not SERVICE_ACCOUNT_PATH or not os.path.exists(SERVICE_ACCOUNT_PATH):
-        raise RuntimeError("SERVICE_ACCOUNT_PATH not set or file not found")
-    
-    credentials = service_account.Credentials.from_service_account_file(
-        SERVICE_ACCOUNT_PATH, scopes=SCOPES
-    )
-    
-    if GSUITE_DELEGATED_EMAIL:
-        credentials = credentials.with_subject(GSUITE_DELEGATED_EMAIL)
-    
-    service = build('docs', 'v1', credentials=credentials)
-    return service, credentials
+mcp = FastMCP("Google Docs MCP (Token-only)")
+
+def _auth_header() -> Dict[str, str]:
+    """Get authorization header with access token."""
+    return {"Authorization": f"Bearer {ACCESS_TOKEN}", "Content-Type": "application/json"}
 
 @mcp.tool()
 def docs_get_document(document_id: str) -> Dict[str, Any]:
     """Get a Google Document by ID."""
     if DRY_RUN:
-        return _dry("get_document", document_id=document_id)
+        return _dry("docs_get_document", document_id=document_id)
     
-    try:
-        docs_service, _ = _get_docs_service()
-        document = docs_service.documents().get(documentId=document_id).execute()
-        
-        return {
-            "status": "success",
-            "document": {
-                "title": document.get('title', ''),
-                "document_id": document_id,
-                "revision_id": document.get('revisionId', ''),
-                "body": document.get('body', {})
-            }
-        }
-    except Exception as e:
-        return {"status": "error", "message": f"Failed to get document: {e}"}
+    with httpx.Client(timeout=30) as c:
+        r = c.get(f"{DOCS_BASE}/{document_id}", headers=_auth_header())
+        r.raise_for_status()
+        return r.json()
 
 @mcp.tool()
 def docs_create_document(title: str) -> Dict[str, Any]:
     """Create a new Google Document."""
     if DRY_RUN:
-        return _dry("create_document", title=title)
+        return _dry("docs_create_document", title=title)
     
-    try:
-        docs_service, _ = _get_docs_service()
-        
-        document = {
-            'title': title
-        }
-        
-        doc = docs_service.documents().create(body=document).execute()
-        
-        return {
-            "status": "success",
-            "document_id": doc.get('documentId'),
-            "title": doc.get('title'),
-            "url": f"https://docs.google.com/document/d/{doc.get('documentId')}/edit"
-        }
-    except Exception as e:
-        return {"status": "error", "message": f"Failed to create document: {e}"}
+    payload = {"title": title}
+    with httpx.Client(timeout=30) as c:
+        r = c.post(DOCS_BASE, headers=_auth_header(), json=payload)
+        r.raise_for_status()
+        return r.json()
 
 @mcp.tool()
-def docs_insert_text(document_id: str, text: str, index: int = 1) -> Dict[str, Any]:
-    """Insert text into a Google Document."""
+def docs_batch_update(document_id: str, requests: List[Dict[str, Any]]) -> Dict[str, Any]:
+    """Apply one or more updates to the document."""
     if DRY_RUN:
-        return _dry("insert_text", document_id=document_id, text=text, index=index)
+        return _dry("docs_batch_update", document_id=document_id, requests=requests)
     
-    try:
-        docs_service, _ = _get_docs_service()
-        
-        requests = [
-            {
-                'insertText': {
-                    'location': {'index': index},
-                    'text': text
-                }
-            }
-        ]
-        
-        result = docs_service.documents().batchUpdate(
-            documentId=document_id,
-            body={'requests': requests}
-        ).execute()
-        
-        return {"status": "success", "message": "Text inserted successfully"}
-    except Exception as e:
-        return {"status": "error", "message": f"Failed to insert text: {e}"}
+    url = f"{DOCS_BASE}/{document_id}:batchUpdate"
+    payload = {"requests": requests}
+    with httpx.Client(timeout=30) as c:
+        r = c.post(url, headers=_auth_header(), json=payload)
+        r.raise_for_status()
+        return r.json()
+
+@mcp.tool()
+def docs_insert_text(document_id: str, text: str, location_index: int = 1) -> Dict[str, Any]:
+    """Insert text at a specific location in the document."""
+    if DRY_RUN:
+        return _dry("docs_insert_text", document_id=document_id, text=text, location_index=location_index)
+    
+    request = {
+        "insertText": {
+            "location": {"index": location_index},
+            "text": text
+        }
+    }
+    return docs_batch_update(document_id, [request])
 
 @mcp.tool()
 def docs_delete_text(document_id: str, start_index: int, end_index: int) -> Dict[str, Any]:
-    """Delete text from a Google Document."""
+    """Delete text from the document."""
     if DRY_RUN:
-        return _dry("delete_text", document_id=document_id, start_index=start_index, end_index=end_index)
+        return _dry("docs_delete_text", document_id=document_id, start_index=start_index, end_index=end_index)
     
-    try:
-        docs_service, _ = _get_docs_service()
-        
-        requests = [
-            {
-                'deleteContentRange': {
-                    'range': {
-                        'startIndex': start_index,
-                        'endIndex': end_index
-                    }
-                }
+    request = {
+        "deleteContentRange": {
+            "range": {
+                "startIndex": start_index,
+                "endIndex": end_index
             }
-        ]
-        
-        result = docs_service.documents().batchUpdate(
-            documentId=document_id,
-            body={'requests': requests}
-        ).execute()
-        
-        return {"status": "success", "message": "Text deleted successfully"}
-    except Exception as e:
-        return {"status": "error", "message": f"Failed to delete text: {e}"}
+        }
+    }
+    return docs_batch_update(document_id, [request])
 
 @mcp.tool()
 def docs_format_text(document_id: str, start_index: int, end_index: int, 
-                    bold: bool = False, italic: bool = False, 
-                    underline: bool = False, font_size: Optional[int] = None) -> Dict[str, Any]:
-    """Format text in a Google Document."""
+                    bold: Optional[bool] = None, italic: Optional[bool] = None,
+                    underline: Optional[bool] = None, font_size: Optional[float] = None) -> Dict[str, Any]:
+    """Format text in the document."""
     if DRY_RUN:
-        return _dry("format_text", document_id=document_id, start_index=start_index, 
-                   end_index=end_index, bold=bold, italic=italic, underline=underline, font_size=font_size)
+        return _dry("docs_format_text", document_id=document_id, start_index=start_index, end_index=end_index, 
+                   bold=bold, italic=italic, underline=underline, font_size=font_size)
     
-    try:
-        docs_service, _ = _get_docs_service()
-        
-        text_style = {}
-        if bold:
-            text_style['bold'] = True
-        if italic:
-            text_style['italic'] = True
-        if underline:
-            text_style['underline'] = True
-        if font_size:
-            text_style['fontSize'] = {'magnitude': font_size, 'unit': 'PT'}
-        
-        requests = [
-            {
-                'updateTextStyle': {
-                    'range': {
-                        'startIndex': start_index,
-                        'endIndex': end_index
-                    },
-                    'textStyle': text_style,
-                    'fields': ','.join(text_style.keys())
-                }
-            }
-        ]
-        
-        result = docs_service.documents().batchUpdate(
-            documentId=document_id,
-            body={'requests': requests}
-        ).execute()
-        
-        return {"status": "success", "message": "Text formatted successfully"}
-    except Exception as e:
-        return {"status": "error", "message": f"Failed to format text: {e}"}
+    text_style = {}
+    if bold is not None:
+        text_style["bold"] = bold
+    if italic is not None:
+        text_style["italic"] = italic
+    if underline is not None:
+        text_style["underline"] = underline
+    if font_size is not None:
+        text_style["fontSize"] = {"magnitude": font_size, "unit": "PT"}
+    
+    request = {
+        "updateTextStyle": {
+            "range": {
+                "startIndex": start_index,
+                "endIndex": end_index
+            },
+            "textStyle": text_style,
+            "fields": ",".join(text_style.keys())
+        }
+    }
+    return docs_batch_update(document_id, [request])
 
 @mcp.tool()
-def docs_find_replace(document_id: str, find_text: str, replace_text: str) -> Dict[str, Any]:
-    """Find and replace text in a Google Document."""
+def docs_search_replace(document_id: str, search_text: str, replace_text: str) -> Dict[str, Any]:
+    """Search and replace text in the document."""
     if DRY_RUN:
-        return _dry("find_replace", document_id=document_id, find_text=find_text, replace_text=replace_text)
+        return _dry("docs_search_replace", document_id=document_id, search_text=search_text, replace_text=replace_text)
     
-    try:
-        docs_service, _ = _get_docs_service()
-        
-        requests = [
-            {
-                'replaceAllText': {
-                    'containsText': {
-                        'text': find_text
-                    },
-                    'replaceText': replace_text
-                }
-            }
-        ]
-        
-        result = docs_service.documents().batchUpdate(
-            documentId=document_id,
-            body={'requests': requests}
-        ).execute()
-        
-        return {"status": "success", "message": "Find and replace completed successfully"}
-    except Exception as e:
-        return {"status": "error", "message": f"Failed to find and replace text: {e}"}
+    request = {
+        "replaceAllText": {
+            "containsText": {
+                "text": search_text,
+                "matchCase": False
+            },
+            "replaceText": replace_text
+        }
+    }
+    return docs_batch_update(document_id, [request])
 
 @mcp.tool()
-def docs_insert_table(document_id: str, index: int = 1, rows: int = 3, columns: int = 3) -> Dict[str, Any]:
-    """Insert a table into a Google Document."""
+def docs_create_paragraph(document_id: str, text: str, location_index: int = 1) -> Dict[str, Any]:
+    """Create a new paragraph in the document."""
     if DRY_RUN:
-        return _dry("insert_table", document_id=document_id, index=index, rows=rows, columns=columns)
+        return _dry("docs_create_paragraph", document_id=document_id, text=text, location_index=location_index)
     
-    try:
-        docs_service, _ = _get_docs_service()
-        
-        requests = [
-            {
-                'insertTable': {
-                    'location': {'index': index},
-                    'rows': rows,
-                    'columns': columns
-                }
-            }
-        ]
-        
-        result = docs_service.documents().batchUpdate(
-            documentId=document_id,
-            body={'requests': requests}
-        ).execute()
-        
-        return {"status": "success", "message": "Table inserted successfully"}
-    except Exception as e:
-        return {"status": "error", "message": f"Failed to insert table: {e}"}
+    request = {
+        "insertText": {
+            "location": {"index": location_index},
+            "text": text + "\n"
+        }
+    }
+    return docs_batch_update(document_id, [request])
 
 @mcp.tool()
-def docs_insert_page_break(document_id: str, index: int = 1) -> Dict[str, Any]:
-    """Insert a page break into a Google Document."""
+def docs_create_heading(document_id: str, text: str, level: int = 1, location_index: int = 1) -> Dict[str, Any]:
+    """Create a heading in the document."""
     if DRY_RUN:
-        return _dry("insert_page_break", document_id=document_id, index=index)
+        return _dry("docs_create_heading", document_id=document_id, text=text, level=level, location_index=location_index)
     
-    try:
-        docs_service, _ = _get_docs_service()
-        
-        requests = [
-            {
-                'insertPageBreak': {
-                    'location': {'index': index}
-                }
-            }
-        ]
-        
-        result = docs_service.documents().batchUpdate(
-            documentId=document_id,
-            body={'requests': requests}
-        ).execute()
-        
-        return {"status": "success", "message": "Page break inserted successfully"}
-    except Exception as e:
-        return {"status": "error", "message": f"Failed to insert page break: {e}"}
+    # Insert text first
+    insert_request = {
+        "insertText": {
+            "location": {"index": location_index},
+            "text": text + "\n"
+        }
+    }
+    
+    # Then format as heading
+    format_request = {
+        "updateParagraphStyle": {
+            "range": {
+                "startIndex": location_index,
+                "endIndex": location_index + len(text)
+            },
+            "paragraphStyle": {
+                "namedStyleType": f"HEADING_{level}"
+            },
+            "fields": "namedStyleType"
+        }
+    }
+    
+    return docs_batch_update(document_id, [insert_request, format_request])
 
 @mcp.tool()
-def docs_batch_update(document_id: str, operations: List[Dict]) -> Dict[str, Any]:
-    """Execute multiple operations on a Google Document."""
+def docs_create_bullet_list(document_id: str, items: List[str], location_index: int = 1) -> Dict[str, Any]:
+    """Create a bullet list in the document."""
     if DRY_RUN:
-        return _dry("batch_update", document_id=document_id, operations=operations)
+        return _dry("docs_create_bullet_list", document_id=document_id, items=items, location_index=location_index)
     
-    try:
-        docs_service, _ = _get_docs_service()
-        
-        result = docs_service.documents().batchUpdate(
-            documentId=document_id,
-            body={'requests': operations}
-        ).execute()
-        
-        return {"status": "success", "message": "Batch update completed successfully"}
-    except Exception as e:
-        return {"status": "error", "message": f"Failed to execute batch update: {e}"}
+    requests = []
+    current_index = location_index
+    
+    for item in items:
+        # Insert text
+        requests.append({
+            "insertText": {
+                "location": {"index": current_index},
+                "text": f"• {item}\n"
+            }
+        })
+        current_index += len(f"• {item}\n")
+    
+    return docs_batch_update(document_id, requests)
+
+@mcp.tool()
+def docs_create_numbered_list(document_id: str, items: List[str], location_index: int = 1) -> Dict[str, Any]:
+    """Create a numbered list in the document."""
+    if DRY_RUN:
+        return _dry("docs_create_numbered_list", document_id=document_id, items=items, location_index=location_index)
+    
+    requests = []
+    current_index = location_index
+    
+    for i, item in enumerate(items, 1):
+        # Insert text
+        requests.append({
+            "insertText": {
+                "location": {"index": current_index},
+                "text": f"{i}. {item}\n"
+            }
+        })
+        current_index += len(f"{i}. {item}\n")
+    
+    return docs_batch_update(document_id, requests)
+
+@mcp.tool()
+def docs_export_document(document_id: str, format: str = "pdf") -> Dict[str, Any]:
+    """Export document in various formats (pdf, docx, html, txt)."""
+    if DRY_RUN:
+        return _dry("docs_export_document", document_id=document_id, format=format)
+    
+    url = f"{DRIVE_BASE}/files/{document_id}/export"
+    params = {"mimeType": f"application/{format}"}
+    
+    with httpx.Client(timeout=30) as c:
+        r = c.get(url, headers=_auth_header(), params=params)
+        r.raise_for_status()
+        return {"content": r.content, "format": format}
 
 if __name__ == "__main__":
     mcp.run()
