@@ -8,6 +8,7 @@ load_dotenv()
 BASE_DIR = pathlib.Path(__file__).resolve().parent
 WA_SERVER = str(BASE_DIR / "servers" / "meta_whatsapp_mcp.py")
 GS_SERVER = str(BASE_DIR / "servers" / "google_sheets_mcp.py")
+GSLIDES_SERVER = str(BASE_DIR / "servers" / "google_slide_mcp.py")
 PY = sys.executable  # launch sub-servers with the same venv interpreter
 
 MCP_CONFIG = {
@@ -23,15 +24,24 @@ MCP_CONFIG = {
                 "META_WA_API_VERSION": os.environ.get("META_WA_API_VERSION", "v21.0"),
             },
         },
-        "sheets": {
+        "google_sheets_mcp": {
             "command": PY,
             "args": [GS_SERVER],
             "transport": "stdio",
             "env": {
-                "DRY_RUN": "1", "LOG_LEVEL": "INFO",
-                "SERVICE_ACCOUNT_PATH": os.environ.get("SERVICE_ACCOUNT_PATH", ""),
-                "GOOGLE_SCOPES": os.environ.get("GOOGLE_SCOPES", ""),
-                "GSUITE_DELEGATED_EMAIL": os.environ.get("GSUITE_DELEGATED_EMAIL", ""),
+                "DRY_RUN": "0", "LOG_LEVEL": "INFO",
+                "GSHEETS_ACCESS_TOKEN": os.environ.get("GSHEETS_ACCESS_TOKEN", ""),
+                "GSHEETS_REFRESH_TOKEN": os.environ.get("GSHEETS_REFRESH_TOKEN", ""),
+            },
+        },
+        "google_slides_mcp": {
+            "command": PY,
+            "args": [GSLIDES_SERVER],
+            "transport": "stdio",
+            "env": {
+                "DRY_RUN": "0", "LOG_LEVEL": "INFO",
+                "GSLIDES_ACCESS_TOKEN": os.environ.get("GSLIDES_ACCESS_TOKEN", ""),
+                "GSLIDES_REFRESH_TOKEN": os.environ.get("GSLIDES_REFRESH_TOKEN", ""),
             },
         },
     }

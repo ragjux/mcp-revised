@@ -49,7 +49,7 @@ curl -sS "$BASE" \
   -H "Accept: application/json,text/event-stream" \
   -H "MCP-Protocol-Version: $PROTO" \
   -H "Mcp-Session-Id: $SESSION" \
-  -d '{"jsonrpc":"2.0","id":3,"method":"tools/call","params":{"name":"sheets_gs_create_spreadsheet","arguments":{"title":"Test Spreadsheet"}}}' \
+  -d '{"jsonrpc":"2.0","id":3,"method":"tools/call","params":{"name":"google_sheets_mcp_gs_create_spreadsheet","arguments":{"title":"Yes MCP Spreadsheet"}}}' \
 | awk '/^data:/{sub(/^data:[ ]*/,"");print}' | jq .
 
 # Test 2: Get values
@@ -59,7 +59,7 @@ curl -sS "$BASE" \
   -H "Accept: application/json,text/event-stream" \
   -H "MCP-Protocol-Version: $PROTO" \
   -H "Mcp-Session-Id: $SESSION" \
-  -d '{"jsonrpc":"2.0","id":4,"method":"tools/call","params":{"name":"sheets_gs_values_get","arguments":{"spreadsheet_id":"1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms","range_a1":"A1:C3"}}}' \
+  -d '{"jsonrpc":"2.0","id":4,"method":"tools/call","params":{"name":"google_sheets_mcp_gs_values_get","arguments":{"spreadsheet_id":"","range_a1":"A1:C3"}}}' \
 | awk '/^data:/{sub(/^data:[ ]*/,"");print}' | jq .
 
 # Test 3: Update values
@@ -69,7 +69,7 @@ curl -sS "$BASE" \
   -H "Accept: application/json,text/event-stream" \
   -H "MCP-Protocol-Version: $PROTO" \
   -H "Mcp-Session-Id: $SESSION" \
-  -d '{"jsonrpc":"2.0","id":5,"method":"tools/call","params":{"name":"sheets_gs_values_update","arguments":{"spreadsheet_id":"1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms","range_a1":"A1:B2","values":[["Name","Age"],["John","25"]]}}}' \
+  -d '{"jsonrpc":"2.0","id":5,"method":"tools/call","params":{"name":"google_sheets_mcp_gs_values_update","arguments":{"spreadsheet_id":"1Yid5t5iBOljim_uBvovyllctO9nlKUURtSeMnEwaMC8","range_a1":"A1:B2","values":[["Name","Age"],["John","25"]]}}}' \
 | awk '/^data:/{sub(/^data:[ ]*/,"");print}' | jq .
 
 # Test 4: Append values
@@ -79,7 +79,7 @@ curl -sS "$BASE" \
   -H "Accept: application/json,text/event-stream" \
   -H "MCP-Protocol-Version: $PROTO" \
   -H "Mcp-Session-Id: $SESSION" \
-  -d '{"jsonrpc":"2.0","id":6,"method":"tools/call","params":{"name":"sheets_gs_values_append","arguments":{"spreadsheet_id":"1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms","range_a1":"A1:B2","values":[["Jane","30"]]}}}' \
+  -d '{"jsonrpc":"2.0","id":6,"method":"tools/call","params":{"name":"google_sheets_mcp_gs_values_append","arguments":{"spreadsheet_id":"1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms","range_a1":"A1:B2","values":[["Jane","30"]]}}}' \
 | awk '/^data:/{sub(/^data:[ ]*/,"");print}' | jq .
 
 # Test 5: Clear values
@@ -89,7 +89,7 @@ curl -sS "$BASE" \
   -H "Accept: application/json,text/event-stream" \
   -H "MCP-Protocol-Version: $PROTO" \
   -H "Mcp-Session-Id: $SESSION" \
-  -d '{"jsonrpc":"2.0","id":7,"method":"tools/call","params":{"name":"sheets_gs_values_clear","arguments":{"spreadsheet_id":"1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms","range_a1":"A1:B2"}}}' \
+  -d '{"jsonrpc":"2.0","id":7,"method":"tools/call","params":{"name":"google_sheets_mcp_gs_values_clear","arguments":{"spreadsheet_id":"1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms","range_a1":"A1:B2"}}}' \
 | awk '/^data:/{sub(/^data:[ ]*/,"");print}' | jq .
 
 # Test 6: Add sheet
@@ -99,7 +99,7 @@ curl -sS "$BASE" \
   -H "Accept: application/json,text/event-stream" \
   -H "MCP-Protocol-Version: $PROTO" \
   -H "Mcp-Session-Id: $SESSION" \
-  -d '{"jsonrpc":"2.0","id":8,"method":"tools/call","params":{"name":"sheets_gs_add_sheet","arguments":{"spreadsheet_id":"1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms","title":"New Sheet"}}}' \
+  -d '{"jsonrpc":"2.0","id":8,"method":"tools/call","params":{"name":"google_sheets_mcp_gs_add_sheet","arguments":{"spreadsheet_id":"1Yid5t5iBOljim_uBvovyllctO9nlKUURtSeMnEwaMC8","title":"New MCP Sheet"}}}' \
 | awk '/^data:/{sub(/^data:[ ]*/,"");print}' | jq .
 
 # Test 7: Delete sheet
@@ -109,7 +109,7 @@ curl -sS "$BASE" \
   -H "Accept: application/json,text/event-stream" \
   -H "MCP-Protocol-Version: $PROTO" \
   -H "Mcp-Session-Id: $SESSION" \
-  -d '{"jsonrpc":"2.0","id":9,"method":"tools/call","params":{"name":"sheets_gs_delete_sheet","arguments":{"spreadsheet_id":"1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms","sheet_id":1}}}' \
+  -d '{"jsonrpc":"2.0","id":9,"method":"tools/call","params":{"name":"google_sheets_mcp_gs_delete_sheet","arguments":{"spreadsheet_id":"1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms","sheet_id":1}}}' \
 | awk '/^data:/{sub(/^data:[ ]*/,"");print}' | jq .
 
 
