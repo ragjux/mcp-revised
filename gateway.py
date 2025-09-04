@@ -9,6 +9,7 @@ BASE_DIR = pathlib.Path(__file__).resolve().parent
 WA_SERVER = str(BASE_DIR / "servers" / "meta_whatsapp_mcp.py")
 GS_SERVER = str(BASE_DIR / "servers" / "google_sheets_mcp.py")
 GSLIDES_SERVER = str(BASE_DIR / "servers" / "google_slide_mcp.py")
+GFORMS_SERVER = str(BASE_DIR / "servers" / "google_form_mcp.py")
 PY = sys.executable  # launch sub-servers with the same venv interpreter
 
 MCP_CONFIG = {
@@ -42,6 +43,16 @@ MCP_CONFIG = {
                 "DRY_RUN": "0", "LOG_LEVEL": "INFO",
                 "GSLIDES_ACCESS_TOKEN": os.environ.get("GSLIDES_ACCESS_TOKEN", ""),
                 "GSLIDES_REFRESH_TOKEN": os.environ.get("GSLIDES_REFRESH_TOKEN", ""),
+            },
+        },
+        "google_forms_mcp": {
+            "command": PY,
+            "args": [GFORMS_SERVER],
+            "transport": "stdio",
+            "env": {
+                "DRY_RUN": "0", "LOG_LEVEL": "INFO",
+                "GFORMS_ACCESS_TOKEN": os.environ.get("GFORMS_ACCESS_TOKEN", ""),
+                "GFORMS_REFRESH_TOKEN": os.environ.get("GFORMS_REFRESH_TOKEN", ""),
             },
         },
     }
