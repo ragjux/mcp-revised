@@ -207,8 +207,18 @@ class MCPChatInterface {
     }
 
     handleStatusMessage(data) {
-        if (data.message === 'connecting_mcp') {
-            this.showToolStatus('Connecting to MCP services...');
+        switch (data.message) {
+            case 'connecting_mcp':
+                this.showToolStatus('Connecting to MCP services...');
+                break;
+            case 'initializing_mcp_session':
+                this.showToolStatus('Initializing MCP session...');
+                break;
+            case 'loading_tools':
+                this.showToolStatus('Loading available tools...');
+                break;
+            default:
+                this.showToolStatus(data.message);
         }
     }
 

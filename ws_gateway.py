@@ -177,6 +177,65 @@ class MCPClient:
         return {"stream_text": "".join(acc_text), "result": final}
 
 # -------------------------
+# Automatic MCP Session Initialization
+# -------------------------
+async def initialize_mcp_session_async(mcp_client: MCPClient) -> None:
+    """
+    Initialize MCP session automatically after authentication.
+    This replicates the functionality of mcp_route_probe_test.sh
+    """
+    try:
+        log.info("🔄 Auto-initializing MCP session...")
+        
+        # Step 1: Initialize session (replicate mcp_route_probe_test.sh logic)
+        init_body = {
+            "jsonrpc": "2.0",
+            "id": 1,
+            "method": "initialize",
+            "params": {
+                "protocolVersion": mcp_client.proto,
+                "capabilities": {"tools": {}},
+                "clientInfo": {"name": "ws-gateway-auto", "version": "0.0.1"},
+            },
+        }
+        
+        # Make the initialize request
+        response = mcp_client.http.post(
+            mcp_client.base, 
+            headers=mcp_client._headers(include_session=False), 
+            json=init_body
+        )
+        response.raise_for_status()
+        
+        # Extract session ID
+        session_id = response.headers.get("mcp-session-id") or response.headers.get("Mcp-Session-Id")
+        if session_id:
+            mcp_client.session_id = session_id
+            log.info(f"✅ MCP session initialized: {session_id}")
+        else:
+            raise RuntimeError("MCP server did not return mcp-session-id header")
+        
+        # Step 2: Send initialized notification
+        init_notification = {
+            "jsonrpc": "2.0",
+            "method": "notifications/initialized",
+            "params": {}
+        }
+        
+        response = mcp_client.http.post(
+            mcp_client.base,
+            headers=mcp_client._headers(),
+            json=init_notification
+        )
+        response.raise_for_status()
+        
+        log.info("✅ MCP session fully initialized automatically")
+        
+    except Exception as e:
+        log.error(f"❌ Failed to auto-initialize MCP session: {e}")
+        raise
+
+# -------------------------
 # Tool mapping: MCP -> OpenAI function tools
 # -------------------------
 def mcp_tools_to_oai_tools(mcp_tools: Dict[str, Any]) -> List[Dict[str, Any]]:
@@ -305,7 +364,13 @@ async def ws_chat(ws: WebSocket):
     try:
         await ws.send_text(ws_event("status", message="connecting_mcp"))
         mcp = MCPClient(MCP_BASE, MCP_PROTO)
-        mcp.initialize()
+        
+        # Auto-initialize MCP session after authentication
+        await ws.send_text(ws_event("status", message="initializing_mcp_session"))
+        await initialize_mcp_session_async(mcp)
+        
+        # Get tools list
+        await ws.send_text(ws_event("status", message="loading_tools"))
         tools_raw = mcp.tools_list()
         oai_tools = mcp_tools_to_oai_tools(tools_raw)
         await ws.send_text(ws_event("tools", count=len(oai_tools), tools=[t["name"] for t in oai_tools]))
