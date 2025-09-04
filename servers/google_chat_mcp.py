@@ -19,11 +19,11 @@ def _dry(name: str, **kwargs):
     return {"dry_run": True, "tool": f"chat_{name}", "args": kwargs}
 
 # Environment variables for token-only authentication
-ACCESS_TOKEN = os.getenv("GOOGLE_CHAT_ACCESS_TOKEN", "")
-REFRESH_TOKEN = os.getenv("GOOGLE_CHAT_REFRESH_TOKEN", "")
+ACCESS_TOKEN = os.getenv("GCHAT_ACCESS_TOKEN", "")
+REFRESH_TOKEN = os.getenv("GCHAT_REFRESH_TOKEN", "")
 
 if not ACCESS_TOKEN or not REFRESH_TOKEN:
-    raise RuntimeError("Set GOOGLE_CHAT_ACCESS_TOKEN and GOOGLE_CHAT_REFRESH_TOKEN environment variables")
+    raise RuntimeError("Set GCHAT_ACCESS_TOKEN and GCHAT_REFRESH_TOKEN environment variables")
 
 CHAT_BASE = "https://chat.googleapis.com/v1"
 

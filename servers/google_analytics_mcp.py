@@ -17,11 +17,11 @@ logging.basicConfig(level=os.getenv("LOG_LEVEL", "INFO"))
 DRY_RUN = os.getenv("DRY_RUN", "0") == "1"
 
 SCOPES = ["https://www.googleapis.com/auth/analytics.readonly"]
-TOKEN_PATH = os.getenv("TOKEN_PATH", "token.json")
-CREDENTIALS_PATH = os.getenv("CREDENTIALS_PATH", "credentials.json")
+TOKEN_PATH = os.getenv("GANALYTICS_TOKEN_PATH", "token.json")
+CREDENTIALS_PATH = os.getenv("GANALYTICS_CREDENTIALS_PATH", "credentials.json")
 
 if not CREDENTIALS_PATH or not os.path.exists(CREDENTIALS_PATH):
-    raise RuntimeError("Provide a valid CREDENTIALS_PATH to your OAuth client secrets JSON file")
+    raise RuntimeError("Provide a valid GANALYTICS_CREDENTIALS_PATH to your OAuth client secrets JSON file")
 
 mcp = FastMCP("Google Analytics MCP (native)")
 

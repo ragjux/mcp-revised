@@ -13,11 +13,11 @@ def _dry(name: str, **kwargs):
     return {"dry_run": True, "tool": f"sheets_{name}", "args": kwargs}
 
 # Environment variables for token-only authentication
-ACCESS_TOKEN = os.getenv("GOOGLE_SHEETS_ACCESS_TOKEN", "")
-REFRESH_TOKEN = os.getenv("GOOGLE_SHEETS_REFRESH_TOKEN", "")
+ACCESS_TOKEN = os.getenv("GSHEETS_ACCESS_TOKEN", "")
+REFRESH_TOKEN = os.getenv("GSHEETS_REFRESH_TOKEN", "")
 
 if not ACCESS_TOKEN or not REFRESH_TOKEN:
-    raise RuntimeError("Set GOOGLE_SHEETS_ACCESS_TOKEN and GOOGLE_SHEETS_REFRESH_TOKEN environment variables")
+    raise RuntimeError("Set GSHEETS_ACCESS_TOKEN and GSHEETS_REFRESH_TOKEN environment variables")
 
 SHEETS_BASE = "https://sheets.googleapis.com/v4/spreadsheets"
 

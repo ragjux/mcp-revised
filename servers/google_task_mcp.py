@@ -23,8 +23,8 @@ def _dry(name: str, **kwargs):
     return {"dry_run": True, "tool": f"gtasks_{name}", "args": kwargs}
 
 SCOPES = ["https://www.googleapis.com/auth/tasks"]
-TOKEN_PATH = os.getenv("TOKEN_PATH", "gcp-oauth.keys.json")
-CREDENTIALS_PATH = os.getenv("CREDENTIALS_PATH", "credentials.json")
+TOKEN_PATH = os.getenv("GTASKS_TOKEN_PATH", "gcp-oauth.keys.json")
+CREDENTIALS_PATH = os.getenv("GTASKS_CREDENTIALS_PATH", "credentials.json")
 
 if not os.path.exists(CREDENTIALS_PATH):
     raise RuntimeError("Place credentials.json (OAuth client) in the repo root")

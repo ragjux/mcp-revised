@@ -64,8 +64,8 @@ MCP_CONFIG = {
             "transport": "stdio",
             "env": {
                 "DRY_RUN": os.environ.get("DRY_RUN", "0"), "LOG_LEVEL": "INFO",
-                "GOOGLE_CHAT_ACCESS_TOKEN": os.environ.get("GOOGLE_CHAT_ACCESS_TOKEN", ""),
-                "GOOGLE_CHAT_REFRESH_TOKEN": os.environ.get("GOOGLE_CHAT_REFRESH_TOKEN", ""),
+                "GCHAT_ACCESS_TOKEN": os.environ.get("GCHAT_ACCESS_TOKEN", ""),
+                "GCHAT_REFRESH_TOKEN": os.environ.get("GCHAT_REFRESH_TOKEN", ""),
             },
         },
         "drive": {
@@ -74,8 +74,8 @@ MCP_CONFIG = {
             "transport": "stdio",
             "env": {
                 "DRY_RUN": os.environ.get("DRY_RUN", "0"), "LOG_LEVEL": "INFO",
-                "GOOGLE_DRIVE_ACCESS_TOKEN": os.environ.get("GOOGLE_DRIVE_ACCESS_TOKEN", ""),
-                "GOOGLE_DRIVE_REFRESH_TOKEN": os.environ.get("GOOGLE_DRIVE_REFRESH_TOKEN", ""),
+                "GDRIVE_ACCESS_TOKEN": os.environ.get("GDRIVE_ACCESS_TOKEN", ""),
+                "GDRIVE_REFRESH_TOKEN": os.environ.get("GDRIVE_REFRESH_TOKEN", ""),
             },
         },
         "docs": {
@@ -84,8 +84,8 @@ MCP_CONFIG = {
             "transport": "stdio",
             "env": {
                 "DRY_RUN": os.environ.get("DRY_RUN", "0"), "LOG_LEVEL": "INFO",
-                "GOOGLE_DOCS_ACCESS_TOKEN": os.environ.get("GOOGLE_DOCS_ACCESS_TOKEN", ""),
-                "GOOGLE_DOCS_REFRESH_TOKEN": os.environ.get("GOOGLE_DOCS_REFRESH_TOKEN", ""),
+                "GDOCS_ACCESS_TOKEN": os.environ.get("GDOCS_ACCESS_TOKEN", ""),
+                "GDOCS_REFRESH_TOKEN": os.environ.get("GDOCS_REFRESH_TOKEN", ""),
             },
         },
         "calendar": {
@@ -231,11 +231,11 @@ MCP_CONFIG = {
             "transport": "stdio",
             "env": {
                 "DRY_RUN": os.environ.get("DRY_RUN", "0"), "LOG_LEVEL": "INFO",
-                "GOOGLE_ADS_TOKEN_PATH": os.environ.get("GOOGLE_ADS_TOKEN_PATH", "token.json"),
-                "GOOGLE_ADS_CREDENTIALS_PATH": os.environ.get("GOOGLE_ADS_CREDENTIALS_PATH", "credentials.json"),
-                "GOOGLE_ADS_AUTH_TYPE": os.environ.get("GOOGLE_ADS_AUTH_TYPE", "service_account"),
-                "GOOGLE_ADS_DEVELOPER_TOKEN": os.environ.get("GOOGLE_ADS_DEVELOPER_TOKEN", ""),
-                "GOOGLE_ADS_LOGIN_CUSTOMER_ID": os.environ.get("GOOGLE_ADS_LOGIN_CUSTOMER_ID", ""),
+                "GADS_TOKEN_PATH": os.environ.get("GADS_TOKEN_PATH", "token.json"),
+                "GADS_CREDENTIALS_PATH": os.environ.get("GADS_CREDENTIALS_PATH", "credentials.json"),
+                "GADS_AUTH_TYPE": os.environ.get("GADS_AUTH_TYPE", "service_account"),
+                "GADS_DEVELOPER_TOKEN": os.environ.get("GADS_DEVELOPER_TOKEN", ""),
+                "GADS_LOGIN_CUSTOMER_ID": os.environ.get("GADS_LOGIN_CUSTOMER_ID", ""),
             },
         },
         "google_analytics": {
@@ -244,8 +244,8 @@ MCP_CONFIG = {
             "transport": "stdio",
             "env": {
                 "DRY_RUN": os.environ.get("DRY_RUN", "0"), "LOG_LEVEL": "INFO",
-                "TOKEN_PATH": os.environ.get("TOKEN_PATH", "token.json"),
-                "CREDENTIALS_PATH": os.environ.get("CREDENTIALS_PATH", "credentials.json"),
+                "GANALYTICS_TOKEN_PATH": os.environ.get("GANALYTICS_TOKEN_PATH", "token.json"),
+                "GANALYTICS_CREDENTIALS_PATH": os.environ.get("GANALYTICS_CREDENTIALS_PATH", "credentials.json"),
             },
         },
         "google_task": {
@@ -254,8 +254,38 @@ MCP_CONFIG = {
             "transport": "stdio",
             "env": {
                 "DRY_RUN": os.environ.get("DRY_RUN", "0"), "LOG_LEVEL": "INFO",
-                "TOKEN_PATH": os.environ.get("TOKEN_PATH", "gcp-oauth.keys.json"),
-                "CREDENTIALS_PATH": os.environ.get("CREDENTIALS_PATH", "credentials.json"),
+                "GTASKS_TOKEN_PATH": os.environ.get("GTASKS_TOKEN_PATH", "gcp-oauth.keys.json"),
+                "GTASKS_CREDENTIALS_PATH": os.environ.get("GTASKS_CREDENTIALS_PATH", "credentials.json"),
+            },
+        },
+        "google_sheets": {
+            "command": PY,
+            "args": [GS_SERVER],
+            "transport": "stdio",
+            "env": {
+                "DRY_RUN": os.environ.get("DRY_RUN", "0"), "LOG_LEVEL": "INFO",
+                "GSHEETS_ACCESS_TOKEN": os.environ.get("GSHEETS_ACCESS_TOKEN", ""),
+                "GSHEETS_REFRESH_TOKEN": os.environ.get("GSHEETS_REFRESH_TOKEN", ""),
+            },
+        },
+        "google_slides": {
+            "command": PY,
+            "args": [GSLIDES_SERVER],
+            "transport": "stdio",
+            "env": {
+                "DRY_RUN": os.environ.get("DRY_RUN", "0"), "LOG_LEVEL": "INFO",
+                "GSLIDES_ACCESS_TOKEN": os.environ.get("GSLIDES_ACCESS_TOKEN", ""),
+                "GSLIDES_REFRESH_TOKEN": os.environ.get("GSLIDES_REFRESH_TOKEN", ""),
+            },
+        },
+        "google_forms": {
+            "command": PY,
+            "args": [GFORMS_SERVER],
+            "transport": "stdio",
+            "env": {
+                "DRY_RUN": os.environ.get("DRY_RUN", "0"), "LOG_LEVEL": "INFO",
+                "GFORMS_ACCESS_TOKEN": os.environ.get("GFORMS_ACCESS_TOKEN", ""),
+                "GFORMS_REFRESH_TOKEN": os.environ.get("GFORMS_REFRESH_TOKEN", ""),
             },
         },
     }

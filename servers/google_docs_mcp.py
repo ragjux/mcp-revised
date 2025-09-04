@@ -19,11 +19,11 @@ def _dry(name: str, **kwargs):
     return {"dry_run": True, "tool": f"docs_{name}", "args": kwargs}
 
 # Environment variables for token-only authentication
-ACCESS_TOKEN = os.getenv("GOOGLE_DOCS_ACCESS_TOKEN", "")
-REFRESH_TOKEN = os.getenv("GOOGLE_DOCS_REFRESH_TOKEN", "")
+ACCESS_TOKEN = os.getenv("GDOCS_ACCESS_TOKEN", "")
+REFRESH_TOKEN = os.getenv("GDOCS_REFRESH_TOKEN", "")
 
 if not ACCESS_TOKEN or not REFRESH_TOKEN:
-    raise RuntimeError("Set GOOGLE_DOCS_ACCESS_TOKEN and GOOGLE_DOCS_REFRESH_TOKEN environment variables")
+    raise RuntimeError("Set GDOCS_ACCESS_TOKEN and GDOCS_REFRESH_TOKEN environment variables")
 
 DOCS_BASE = "https://docs.googleapis.com/v1/documents"
 DRIVE_BASE = "https://www.googleapis.com/drive/v3"
