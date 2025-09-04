@@ -7,7 +7,6 @@ load_dotenv()
 
 BASE_DIR = pathlib.Path(__file__).resolve().parent
 WA_SERVER = str(BASE_DIR / "servers" / "meta_whatsapp_mcp.py")
-GS_SERVER = str(BASE_DIR / "servers" / "google_sheets_mcp.py")
 GMAIL_SERVER = str(BASE_DIR / "servers" / "gmail_mcp.py")
 CHAT_SERVER = str(BASE_DIR / "servers" / "google_chat_mcp.py")
 DRIVE_SERVER = str(BASE_DIR / "servers" / "google_drive_mcp.py")
@@ -41,16 +40,6 @@ MCP_CONFIG = {
                 "META_WA_ACCESS_TOKEN": os.environ.get("META_WA_ACCESS_TOKEN", ""),
                 "META_WA_PHONE_NUMBER_ID": os.environ.get("META_WA_PHONE_NUMBER_ID", ""),
                 "META_WA_API_VERSION": os.environ.get("META_WA_API_VERSION", "v21.0"),
-            },
-        },
-        "sheets": {
-            "command": PY,
-            "args": [GS_SERVER],
-            "transport": "stdio",
-            "env": {
-                "DRY_RUN": os.environ.get("DRY_RUN", "0"), "LOG_LEVEL": "INFO",
-                "GOOGLE_SHEETS_ACCESS_TOKEN": os.environ.get("GOOGLE_SHEETS_ACCESS_TOKEN", ""),
-                "GOOGLE_SHEETS_REFRESH_TOKEN": os.environ.get("GOOGLE_SHEETS_REFRESH_TOKEN", ""),
             },
         },
         "gmail": {
