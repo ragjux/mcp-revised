@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MCP Gateway UI</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <h1><i class="fas fa-plug"></i> MCP Gateway UI</h1>
+            <div class="connection-status">
+                <span id="connectionStatus" class="status-disconnected">Disconnected</span>
+                <button id="connectBtn" class="btn btn-primary">Connect</button>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Sidebar -->
+            <aside class="sidebar">
+                <div class="session-info">
+                    <h3>Session Info</h3>
+                    <div class="info-item">
+                        <label>Session ID:</label>
+                        <span id="sessionId">Not connected</span>
+                    </div>
+                    <div class="info-item">
+                        <label>Protocol:</label>
+                        <span id="protocolVersion">2025-06-18</span>
+                    </div>
+                    <div class="info-item">
+                        <label>Base URL:</label>
+                        <span id="baseUrl">http://localhost:8080/mcp</span>
+                    </div>
+                </div>
+
+                <div class="tools-section">
+                    <h3>Available Tools</h3>
+                    <div class="tool-categories">
+                        <div class="tool-category">
+                            <h4><i class="fas fa-table"></i> Google Sheets</h4>
+                            <div class="tool-list" id="sheetsTools"></div>
+                        </div>
+                        <div class="tool-category">
+                            <h4><i class="fas fa-presentation"></i> Google Slides</h4>
+                            <div class="tool-list" id="slidesTools"></div>
+                        </div>
+                        <div class="tool-category">
+                            <h4><i class="fas fa-whatsapp"></i> WhatsApp</h4>
+                            <div class="tool-list" id="whatsappTools"></div>
+                        </div>
+                        <div class="tool-category">
+                            <h4><i class="fas fa-clipboard-list"></i> Google Forms</h4>
+                            <div class="tool-list" id="formsTools"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="test-runner-section">
+                    <h3>Test Runner</h3>
+                    <div class="test-controls">
+                        <button id="runAllTestsBtn" class="btn btn-success">
+                            <i class="fas fa-play"></i> Run All Tests
+                        </button>
+                        <button id="runCategoryTestsBtn" class="btn btn-secondary">
+                            <i class="fas fa-play-circle"></i> Run Category Tests
+                        </button>
+                    </div>
+                    <div class="test-category-selector" id="testCategorySelector" style="display: none;">
+                        <select id="testCategorySelect">
+                            <option value="">Select Category</option>
+                            <option value="sheets">Google Sheets</option>
+                            <option value="slides">Google Slides</option>
+                            <option value="whatsapp">WhatsApp</option>
+                            <option value="forms">Google Forms</option>
+                        </select>
+                        <button id="runSelectedCategoryBtn" class="btn btn-primary">Run</button>
+                    </div>
+                </div>
+            </aside>
+
+            <!-- Main Panel -->
+            <main class="main-panel">
+                <!-- Tool Selection -->
+                <div class="tool-selection" id="toolSelection">
+                    <h2>Select a Tool</h2>
+                    <p>Choose a tool from the sidebar to start testing MCP endpoints.</p>
+                </div>
+
+                <!-- Tool Interface -->
+                <div class="tool-interface" id="toolInterface" style="display: none;">
+                    <div class="tool-header">
+                        <h2 id="selectedToolName">Tool Name</h2>
+                        <button id="executeBtn" class="btn btn-success">Execute</button>
+                    </div>
+                    
+                    <div class="tool-description">
+                        <p id="toolDescription">Tool description will appear here.</p>
+                    </div>
+
+                    <div class="parameters-section">
+                        <h3>Parameters</h3>
+                        <form id="parametersForm" class="parameters-form">
+                            <!-- Dynamic parameters will be inserted here -->
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Chat Interface -->
+                <div class="chat-section">
+                    <div class="chat-header">
+                        <h3>Request/Response Log</h3>
+                        <button id="clearChatBtn" class="btn btn-secondary">Clear</button>
+                    </div>
+                    <div class="chat-messages" id="chatMessages">
+                        <div class="message system-message">
+                            <i class="fas fa-info-circle"></i>
+                            <span>Welcome to MCP Gateway UI. Connect to start testing tools.</span>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+
+        <!-- Response Modal -->
+        <div id="responseModal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>Response</h3>
+                    <span class="close">&times;</span>
+                </div>
+                <div class="modal-body">
+                    <pre id="responseContent"></pre>
+                </div>
+            </div>
+        </div>
+
+        <!-- Loading Overlay -->
+        <div id="loadingOverlay" class="loading-overlay" style="display: none;">
+            <div class="spinner"></div>
+            <p>Processing request...</p>
+        </div>
+    </div>
+
+    <script src="test-scenarios.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
