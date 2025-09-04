@@ -1,521 +1,284 @@
-// MCP Gateway UI JavaScript
-class MCPGatewayUI {
+class MCPChatInterface {
     constructor() {
-        this.baseUrl = 'http://localhost:8080/mcp';
-        this.protocolVersion = '2025-06-18';
-        this.sessionId = null;
+        this.ws = null;
         this.isConnected = false;
-        this.availableTools = {};
-        this.currentTool = null;
-        this.testRunner = null;
+        this.reconnectAttempts = 0;
+        this.maxReconnectAttempts = 5;
+        this.reconnectDelay = 1000;
         
-        this.initializeEventListeners();
-        this.loadToolDefinitions();
+        this.initializeElements();
+        this.setupEventListeners();
+        this.connect();
     }
 
-    initializeEventListeners() {
-        // Connection button
-        document.getElementById('connectBtn').addEventListener('click', () => {
-            if (this.isConnected) {
-                this.disconnect();
-            } else {
+    initializeElements() {
+        this.chatMessages = document.getElementById('chatMessages');
+        this.messageInput = document.getElementById('messageInput');
+        this.sendButton = document.getElementById('sendButton');
+        this.connectionStatus = document.getElementById('connectionStatus');
+        this.toolStatus = document.getElementById('toolStatus');
+        this.toolStatusText = document.getElementById('toolStatusText');
+        this.toolsCount = document.getElementById('toolsCount');
+        this.loadingOverlay = document.getElementById('loadingOverlay');
+        this.welcomeTime = document.getElementById('welcomeTime');
+    }
+
+    setupEventListeners() {
+        // Send button click
+        this.sendButton.addEventListener('click', () => this.sendMessage());
+        
+        // Enter key to send (Shift+Enter for new line)
+        this.messageInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                this.sendMessage();
+            }
+        });
+
+        // Auto-resize textarea
+        this.messageInput.addEventListener('input', () => {
+            this.autoResizeTextarea();
+            this.updateSendButton();
+        });
+
+        // Set welcome message time
+        this.welcomeTime.textContent = new Date().toLocaleTimeString();
+    }
+
+    connect() {
+        try {
+            this.ws = new WebSocket('ws://localhost:9090/ws');
+            this.updateConnectionStatus('connecting', 'Connecting...');
+            
+            this.ws.onopen = () => {
+                this.isConnected = true;
+                this.reconnectAttempts = 0;
+                this.updateConnectionStatus('connected', 'Connected');
+                this.hideLoadingOverlay();
+                console.log('Connected to MCP WebSocket');
+            };
+
+            this.ws.onmessage = (event) => {
+                this.handleMessage(JSON.parse(event.data));
+            };
+
+            this.ws.onclose = () => {
+                this.isConnected = false;
+                this.updateConnectionStatus('disconnected', 'Disconnected');
+                this.hideLoadingOverlay();
+                this.attemptReconnect();
+            };
+
+            this.ws.onerror = (error) => {
+                console.error('WebSocket error:', error);
+                this.updateConnectionStatus('disconnected', 'Connection Error');
+            };
+
+        } catch (error) {
+            console.error('Failed to connect:', error);
+            this.updateConnectionStatus('disconnected', 'Connection Failed');
+            this.attemptReconnect();
+        }
+    }
+
+    attemptReconnect() {
+        if (this.reconnectAttempts < this.maxReconnectAttempts) {
+            this.reconnectAttempts++;
+            this.updateConnectionStatus('connecting', `Reconnecting... (${this.reconnectAttempts}/${this.maxReconnectAttempts})`);
+            
+            setTimeout(() => {
                 this.connect();
-            }
-        });
-
-        // Clear chat button
-        document.getElementById('clearChatBtn').addEventListener('click', () => {
-            this.clearChat();
-        });
-
-        // Execute button
-        document.getElementById('executeBtn').addEventListener('click', () => {
-            this.executeCurrentTool();
-        });
-
-        // Modal close
-        document.querySelector('.close').addEventListener('click', () => {
-            this.closeModal();
-        });
-
-        // Close modal on outside click
-        window.addEventListener('click', (event) => {
-            const modal = document.getElementById('responseModal');
-            if (event.target === modal) {
-                this.closeModal();
-            }
-        });
-
-        // Test runner buttons
-        document.getElementById('runAllTestsBtn').addEventListener('click', () => {
-            this.runAllTests();
-        });
-
-        document.getElementById('runCategoryTestsBtn').addEventListener('click', () => {
-            this.showCategorySelector();
-        });
-
-        document.getElementById('runSelectedCategoryBtn').addEventListener('click', () => {
-            this.runCategoryTests();
-        });
-    }
-
-    async connect() {
-        try {
-            this.showLoading('Connecting to MCP Gateway...');
-            
-            // Initialize session
-            const initResponse = await this.makeRequest('initialize', {
-                protocolVersion: this.protocolVersion,
-                capabilities: { tools: {} },
-                clientInfo: { name: 'MCP Gateway UI', version: '1.0.0' }
-            });
-
-            // Send initialized notification
-            await this.makeRequest('notifications/initialized', {});
-
-            // Get available tools
-            const toolsResponse = await this.makeRequest('tools/list', {});
-            
-            this.sessionId = initResponse.headers['mcp-session-id'];
-            this.availableTools = this.parseTools(toolsResponse.result?.tools || []);
-            this.isConnected = true;
-
-            this.updateConnectionStatus();
-            this.populateToolsList();
-            this.addSystemMessage('Successfully connected to MCP Gateway!');
-            
-        } catch (error) {
-            this.addErrorMessage(`Connection failed: ${error.message}`);
-        } finally {
-            this.hideLoading();
-        }
-    }
-
-    disconnect() {
-        this.sessionId = null;
-        this.isConnected = false;
-        this.availableTools = {};
-        this.currentTool = null;
-        
-        this.updateConnectionStatus();
-        this.clearToolsList();
-        this.hideToolInterface();
-        this.addSystemMessage('Disconnected from MCP Gateway');
-    }
-
-    async makeRequest(method, params = {}) {
-        const request = {
-            jsonrpc: '2.0',
-            id: Date.now(),
-            method: method,
-            params: params
-        };
-
-        const headers = {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json,text/event-stream',
-            'MCP-Protocol-Version': this.protocolVersion
-        };
-
-        if (this.sessionId) {
-            headers['Mcp-Session-Id'] = this.sessionId;
-        }
-
-        const response = await fetch(this.baseUrl, {
-            method: 'POST',
-            headers: headers,
-            body: JSON.stringify(request)
-        });
-
-        if (!response.ok) {
-            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-        }
-
-        const text = await response.text();
-        const lines = text.split('\n');
-        let result = null;
-
-        for (const line of lines) {
-            if (line.startsWith('data: ')) {
-                try {
-                    result = JSON.parse(line.substring(6));
-                    break;
-                } catch (e) {
-                    // Continue to next line
-                }
-            }
-        }
-
-        if (!result) {
-            throw new Error('Invalid response format');
-        }
-
-        return { result, headers: Object.fromEntries(response.headers.entries()) };
-    }
-
-    parseTools(tools) {
-        const categorized = {
-            sheets: [],
-            slides: [],
-            whatsapp: [],
-            forms: []
-        };
-
-        tools.forEach(tool => {
-            const name = tool.name.toLowerCase();
-            if (name.includes('sheets') || name.includes('gs_')) {
-                categorized.sheets.push(tool);
-            } else if (name.includes('slides') || name.includes('gs_')) {
-                categorized.slides.push(tool);
-            } else if (name.includes('whatsapp') || name.includes('wa_')) {
-                categorized.whatsapp.push(tool);
-            } else if (name.includes('forms') || name.includes('gf_')) {
-                categorized.forms.push(tool);
-            }
-        });
-
-        return categorized;
-    }
-
-    populateToolsList() {
-        const categories = {
-            sheets: document.getElementById('sheetsTools'),
-            slides: document.getElementById('slidesTools'),
-            whatsapp: document.getElementById('whatsappTools'),
-            forms: document.getElementById('formsTools')
-        };
-
-        Object.keys(categories).forEach(category => {
-            const container = categories[category];
-            container.innerHTML = '';
-
-            this.availableTools[category]?.forEach(tool => {
-                const toolElement = document.createElement('div');
-                toolElement.className = 'tool-item';
-                toolElement.textContent = tool.name;
-                toolElement.addEventListener('click', () => {
-                    this.selectTool(tool);
-                });
-                container.appendChild(toolElement);
-            });
-        });
-    }
-
-    clearToolsList() {
-        const containers = ['sheetsTools', 'slidesTools', 'whatsappTools', 'formsTools'];
-        containers.forEach(id => {
-            document.getElementById(id).innerHTML = '';
-        });
-    }
-
-    selectTool(tool) {
-        // Remove active class from all tools
-        document.querySelectorAll('.tool-item').forEach(item => {
-            item.classList.remove('active');
-        });
-
-        // Add active class to selected tool
-        event.target.classList.add('active');
-
-        this.currentTool = tool;
-        this.showToolInterface(tool);
-    }
-
-    showToolInterface(tool) {
-        document.getElementById('toolSelection').style.display = 'none';
-        document.getElementById('toolInterface').style.display = 'block';
-
-        document.getElementById('selectedToolName').textContent = tool.name;
-        document.getElementById('toolDescription').textContent = tool.description || 'No description available.';
-
-        this.createParameterForm(tool);
-    }
-
-    hideToolInterface() {
-        document.getElementById('toolSelection').style.display = 'block';
-        document.getElementById('toolInterface').style.display = 'none';
-        document.querySelectorAll('.tool-item').forEach(item => {
-            item.classList.remove('active');
-        });
-    }
-
-    createParameterForm(tool) {
-        const form = document.getElementById('parametersForm');
-        form.innerHTML = '';
-
-        if (!tool.inputSchema?.properties) {
-            form.innerHTML = '<p>No parameters required for this tool.</p>';
-            return;
-        }
-
-        Object.entries(tool.inputSchema.properties).forEach(([key, prop]) => {
-            const formGroup = document.createElement('div');
-            formGroup.className = 'form-group';
-
-            const label = document.createElement('label');
-            label.textContent = prop.title || key;
-            label.setAttribute('for', key);
-
-            let input;
-            if (prop.type === 'boolean') {
-                input = document.createElement('select');
-                input.innerHTML = '<option value="true">True</option><option value="false">False</option>';
-            } else if (prop.type === 'array') {
-                input = document.createElement('textarea');
-                input.placeholder = 'Enter JSON array format: ["item1", "item2"]';
-            } else if (prop.type === 'object') {
-                input = document.createElement('textarea');
-                input.placeholder = 'Enter JSON object format: {"key": "value"}';
-            } else {
-                input = document.createElement('input');
-                input.type = prop.type === 'integer' ? 'number' : 'text';
-            }
-
-            input.id = key;
-            input.name = key;
-            input.required = tool.inputSchema.required?.includes(key) || false;
-
-            if (prop.default !== undefined) {
-                input.value = prop.default;
-            }
-
-            if (prop.description) {
-                const help = document.createElement('div');
-                help.className = 'form-help';
-                help.textContent = prop.description;
-                formGroup.appendChild(help);
-            }
-
-            formGroup.appendChild(label);
-            formGroup.appendChild(input);
-            form.appendChild(formGroup);
-        });
-    }
-
-    async executeCurrentTool() {
-        if (!this.currentTool) {
-            this.addErrorMessage('No tool selected');
-            return;
-        }
-
-        try {
-            this.showLoading('Executing tool...');
-
-            const formData = new FormData(document.getElementById('parametersForm'));
-            const parameters = {};
-
-            for (const [key, value] of formData.entries()) {
-                parameters[key] = this.parseParameterValue(value);
-            }
-
-            this.addRequestMessage(this.currentTool.name, parameters);
-
-            const response = await this.makeRequest('tools/call', {
-                name: this.currentTool.name,
-                arguments: parameters
-            });
-
-            this.addResponseMessage(this.currentTool.name, response.result);
-            this.showResponseModal(response.result);
-
-        } catch (error) {
-            this.addErrorMessage(`Tool execution failed: ${error.message}`);
-        } finally {
-            this.hideLoading();
-        }
-    }
-
-    parseParameterValue(value) {
-        // Try to parse as JSON for arrays and objects
-        if (value.startsWith('[') || value.startsWith('{')) {
-            try {
-                return JSON.parse(value);
-            } catch (e) {
-                return value;
-            }
-        }
-
-        // Convert string numbers to numbers
-        if (!isNaN(value) && value !== '') {
-            return Number(value);
-        }
-
-        // Convert string booleans to booleans
-        if (value === 'true') return true;
-        if (value === 'false') return false;
-
-        return value;
-    }
-
-    updateConnectionStatus() {
-        const statusElement = document.getElementById('connectionStatus');
-        const buttonElement = document.getElementById('connectBtn');
-        const sessionElement = document.getElementById('sessionId');
-
-        if (this.isConnected) {
-            statusElement.textContent = 'Connected';
-            statusElement.className = 'status-connected';
-            buttonElement.textContent = 'Disconnect';
-            sessionElement.textContent = this.sessionId || 'Unknown';
+            }, this.reconnectDelay * this.reconnectAttempts);
         } else {
-            statusElement.textContent = 'Disconnected';
-            statusElement.className = 'status-disconnected';
-            buttonElement.textContent = 'Connect';
-            sessionElement.textContent = 'Not connected';
+            this.updateConnectionStatus('disconnected', 'Connection Failed');
+            this.showErrorMessage('Unable to connect to the MCP server. Please check if ws_gateway.py is running.');
         }
     }
 
-    addSystemMessage(message) {
-        this.addMessage('system', 'System', message);
-    }
-
-    addRequestMessage(toolName, parameters) {
-        this.addMessage('request', `Request: ${toolName}`, JSON.stringify(parameters, null, 2));
-    }
-
-    addResponseMessage(toolName, response) {
-        this.addMessage('response', `Response: ${toolName}`, JSON.stringify(response, null, 2));
-    }
-
-    addErrorMessage(message) {
-        this.addMessage('error', 'Error', message);
-    }
-
-    addMessage(type, header, body) {
-        const messagesContainer = document.getElementById('chatMessages');
-        const messageElement = document.createElement('div');
-        messageElement.className = `message ${type}-message`;
-
-        const icon = this.getMessageIcon(type);
-        const timestamp = new Date().toLocaleTimeString();
-
-        messageElement.innerHTML = `
-            <i class="${icon}"></i>
-            <div class="message-content">
-                <div class="message-header">${header} - ${timestamp}</div>
-                <div class="message-body">${body}</div>
-            </div>
-        `;
-
-        messagesContainer.appendChild(messageElement);
-        messagesContainer.scrollTop = messagesContainer.scrollHeight;
-    }
-
-    getMessageIcon(type) {
-        const icons = {
-            system: 'fas fa-info-circle',
-            request: 'fas fa-paper-plane',
-            response: 'fas fa-check-circle',
-            error: 'fas fa-exclamation-triangle'
-        };
-        return icons[type] || 'fas fa-info-circle';
-    }
-
-    clearChat() {
-        document.getElementById('chatMessages').innerHTML = `
-            <div class="message system-message">
-                <i class="fas fa-info-circle"></i>
-                <span>Chat cleared. Ready for new requests.</span>
-            </div>
-        `;
-    }
-
-    showResponseModal(response) {
-        document.getElementById('responseContent').textContent = JSON.stringify(response, null, 2);
-        document.getElementById('responseModal').style.display = 'block';
-    }
-
-    closeModal() {
-        document.getElementById('responseModal').style.display = 'none';
-    }
-
-    showLoading(message) {
-        document.querySelector('#loadingOverlay p').textContent = message;
-        document.getElementById('loadingOverlay').style.display = 'flex';
-    }
-
-    hideLoading() {
-        document.getElementById('loadingOverlay').style.display = 'none';
-    }
-
-    loadToolDefinitions() {
-        // This would typically load from a configuration file
-        // For now, we'll rely on the dynamic tool discovery from the MCP server
-    }
-
-    // Test Runner Methods
-    async runAllTests() {
-        if (!this.isConnected) {
-            this.addErrorMessage('Please connect to MCP Gateway first');
-            return;
+    handleMessage(data) {
+        console.log('Received message:', data);
+        
+        switch (data.event) {
+            case 'status':
+                this.handleStatusMessage(data);
+                break;
+            case 'tools':
+                this.handleToolsMessage(data);
+                break;
+            case 'user_message':
+                this.addUserMessage(data.text);
+                break;
+            case 'ai_message':
+                this.addBotMessage(data.text, data.latency_ms);
+                this.hideToolStatus();
+                break;
+            case 'tool_call':
+                this.showToolStatus(`Calling tool: ${data.name}`);
+                break;
+            case 'tool_result':
+                this.showToolStatus(`Tool completed: ${data.name}`);
+                break;
+            case 'error':
+                this.handleErrorMessage(data);
+                break;
+            default:
+                console.log('Unknown message type:', data.event);
         }
+    }
 
-        if (!this.testRunner) {
-            this.testRunner = new TestRunner(this);
+    handleStatusMessage(data) {
+        if (data.message === 'connecting_mcp') {
+            this.showToolStatus('Connecting to MCP services...');
         }
+    }
 
+    handleToolsMessage(data) {
+        this.toolsCount.textContent = `${data.count} tools loaded`;
+        this.showToolStatus(`Loaded ${data.count} tools: ${data.tools.join(', ')}`);
+        
+        // Hide tool status after 3 seconds
+        setTimeout(() => {
+            this.hideToolStatus();
+        }, 3000);
+    }
+
+    handleErrorMessage(data) {
+        console.error('Error from server:', data);
+        this.addBotMessage(`❌ Error: ${data.detail}`, null, true);
+        this.hideToolStatus();
+    }
+
+    sendMessage() {
+        const message = this.messageInput.value.trim();
+        if (!message || !this.isConnected) return;
+
+        // Clear input immediately for better UX
+        this.messageInput.value = '';
+        this.autoResizeTextarea();
+        this.updateSendButton();
+
+        // Send to server - user message will be displayed when server echoes it back
         try {
-            await this.testRunner.runAllTests();
+            this.ws.send(JSON.stringify({ message: message }));
         } catch (error) {
-            this.addErrorMessage(`Test execution failed: ${error.message}`);
+            console.error('Failed to send message:', error);
+            this.addBotMessage('❌ Failed to send message. Please try again.', null, true);
         }
     }
 
-    showCategorySelector() {
-        const selector = document.getElementById('testCategorySelector');
-        selector.style.display = selector.style.display === 'none' ? 'block' : 'none';
+    addUserMessage(text) {
+        const messageElement = this.createMessageElement('user', text);
+        this.chatMessages.appendChild(messageElement);
+        this.scrollToBottom();
     }
 
-    async runCategoryTests() {
-        const category = document.getElementById('testCategorySelect').value;
-        if (!category) {
-            this.addErrorMessage('Please select a test category');
-            return;
-        }
+    addBotMessage(text, latency = null, isError = false) {
+        const messageElement = this.createMessageElement('bot', text, latency, isError);
+        this.chatMessages.appendChild(messageElement);
+        this.scrollToBottom();
+    }
 
-        if (!this.isConnected) {
-            this.addErrorMessage('Please connect to MCP Gateway first');
-            return;
+    createMessageElement(type, text, latency = null, isError = false) {
+        const messageDiv = document.createElement('div');
+        messageDiv.className = `message ${type}-message`;
+        
+        const avatar = document.createElement('div');
+        avatar.className = 'message-avatar';
+        avatar.innerHTML = type === 'user' ? '<i class="fas fa-user"></i>' : '<i class="fas fa-robot"></i>';
+        
+        const content = document.createElement('div');
+        content.className = 'message-content';
+        
+        const textDiv = document.createElement('div');
+        textDiv.className = 'message-text';
+        textDiv.innerHTML = this.formatMessage(text);
+        
+        const timeDiv = document.createElement('div');
+        timeDiv.className = 'message-time';
+        timeDiv.textContent = new Date().toLocaleTimeString();
+        
+        if (latency) {
+            timeDiv.textContent += ` (${latency}ms)`;
         }
+        
+        content.appendChild(textDiv);
+        content.appendChild(timeDiv);
+        
+        messageDiv.appendChild(avatar);
+        messageDiv.appendChild(content);
+        
+        return messageDiv;
+    }
 
-        if (!this.testRunner) {
-            this.testRunner = new TestRunner(this);
-        }
+    formatMessage(text) {
+        // Convert markdown-like formatting to HTML
+        return text
+            .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+            .replace(/\*(.*?)\*/g, '<em>$1</em>')
+            .replace(/`(.*?)`/g, '<code>$1</code>')
+            .replace(/\n/g, '<br>');
+    }
 
-        try {
-            await this.testRunner.runCategoryTests(category);
-        } catch (error) {
-            this.addErrorMessage(`Category test execution failed: ${error.message}`);
+    showToolStatus(text) {
+        this.toolStatusText.textContent = text;
+        this.toolStatus.style.display = 'block';
+    }
+
+    hideToolStatus() {
+        this.toolStatus.style.display = 'none';
+    }
+
+    updateConnectionStatus(status, text) {
+        this.connectionStatus.className = `connection-status ${status}`;
+        this.connectionStatus.querySelector('span').textContent = text;
+        
+        const icon = this.connectionStatus.querySelector('i');
+        switch (status) {
+            case 'connected':
+                icon.style.color = '#4ade80';
+                break;
+            case 'connecting':
+                icon.style.color = '#fbbf24';
+                break;
+            case 'disconnected':
+                icon.style.color = '#f87171';
+                break;
         }
+    }
+
+    updateSendButton() {
+        const hasText = this.messageInput.value.trim().length > 0;
+        this.sendButton.disabled = !hasText || !this.isConnected;
+    }
+
+    autoResizeTextarea() {
+        this.messageInput.style.height = 'auto';
+        this.messageInput.style.height = Math.min(this.messageInput.scrollHeight, 120) + 'px';
+    }
+
+    scrollToBottom() {
+        this.chatMessages.scrollTop = this.chatMessages.scrollHeight;
+    }
+
+    hideLoadingOverlay() {
+        setTimeout(() => {
+            this.loadingOverlay.classList.add('hidden');
+        }, 500);
+    }
+
+    showErrorMessage(message) {
+        this.addBotMessage(message, null, true);
     }
 }
 
-// Initialize the UI when the page loads
+// Initialize the chat interface when the page loads
 document.addEventListener('DOMContentLoaded', () => {
-    window.mcpUI = new MCPGatewayUI();
+    new MCPChatInterface();
 });
 
-// Add some sample test data for demonstration
-const sampleTestData = {
-    'google_sheets_mcp_gs_create_spreadsheet': {
-        title: 'Test Spreadsheet'
-    },
-    'google_sheets_mcp_gs_values_update': {
-        spreadsheet_id: '1Yid5t5iBOljim_uBvovyllctO9nlKUURtSeMnEwaMC8',
-        range_a1: 'A1:B2',
-        values: [['Name', 'Age'], ['Aman', '25']]
-    },
-    'whatsapp_wa_send_text': {
-        to: '919910792473',
-        text: 'Hello from MCP Gateway UI!',
-        preview_url: false
-    },
-    'google_forms_mcp_gf_create_form': {
-        title: 'Test Form',
-        document_title: 'Test Form Document'
+// Handle page visibility changes to reconnect if needed
+document.addEventListener('visibilitychange', () => {
+    if (!document.hidden && window.mcpChat && !window.mcpChat.isConnected) {
+        window.mcpChat.connect();
     }
-};
-
-// Add test data to window for easy access
-window.sampleTestData = sampleTestData;
+});
