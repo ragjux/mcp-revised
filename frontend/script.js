@@ -88,6 +88,13 @@ class MCPChatInterface {
                 this.updateConnectionStatus('connected', 'Connected');
                 this.hideLoadingOverlay();
                 this.hideAuthModal();
+                
+                // Clear connection timeout
+                if (this.connectionTimeout) {
+                    clearTimeout(this.connectionTimeout);
+                    this.connectionTimeout = null;
+                }
+                
                 console.log('Connected to MCP WebSocket');
             };
 
@@ -100,13 +107,24 @@ class MCPChatInterface {
                 this.updateConnectionStatus('disconnected', 'Disconnected');
                 this.hideLoadingOverlay();
                 
+                // Clear connection timeout
+                if (this.connectionTimeout) {
+                    clearTimeout(this.connectionTimeout);
+                    this.connectionTimeout = null;
+                }
+                
                 // Check if it's an authentication error
                 if (event.code === 1008) {
-                    this.showAuthError('Authentication failed. Please check your token.');
+                    this.showAuthError('Invalid agent token. Please check your token and try again.');
                     this.connectButton.disabled = false;
                     this.connectButton.innerHTML = '<i class="fas fa-plug"></i> Connect';
                 } else {
-                    this.attemptReconnect();
+                    // If connection was closed unexpectedly (not by user disconnect), reset to auth
+                    if (this.authToken && event.code !== 1000) {
+                        this.handleDisconnect();
+                    } else {
+                        this.attemptReconnect();
+                    }
                 }
             };
 
@@ -114,12 +132,25 @@ class MCPChatInterface {
                 console.error('WebSocket error:', error);
                 this.updateConnectionStatus('disconnected', 'Connection Error');
                 this.hideLoadingOverlay();
+                
+                // Clear connection timeout
+                if (this.connectionTimeout) {
+                    clearTimeout(this.connectionTimeout);
+                    this.connectionTimeout = null;
+                }
             };
 
         } catch (error) {
             console.error('Failed to connect:', error);
             this.updateConnectionStatus('disconnected', 'Connection Failed');
             this.hideLoadingOverlay();
+            
+            // Clear connection timeout
+            if (this.connectionTimeout) {
+                clearTimeout(this.connectionTimeout);
+                this.connectionTimeout = null;
+            }
+            
             this.attemptReconnect();
         }
     }
@@ -338,9 +369,17 @@ class MCPChatInterface {
     showAuthError(message) {
         this.authErrorMessage.textContent = message;
         this.authError.style.display = 'flex';
+        
+        // Always reset button state
         this.connectButton.disabled = false;
         this.connectButton.innerHTML = '<i class="fas fa-plug"></i> Connect';
+        
+        // Hide loading overlay and reset connection status
         this.hideLoadingOverlay();
+        this.updateConnectionStatus('disconnected', 'Authentication Failed');
+        
+        // Clear any existing auth token
+        this.authToken = null;
     }
 
     hideAuthError() {
@@ -360,18 +399,48 @@ class MCPChatInterface {
         this.connectButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Connecting...';
 
         this.authToken = token;
+        
+        // Set a timeout to prevent button from getting stuck
+        this.connectionTimeout = setTimeout(() => {
+            if (!this.isConnected) {
+                this.showAuthError('Connection timeout. Please check your token and try again.');
+            }
+        }, 10000); // 10 second timeout
+        
         this.connect();
     }
 
     handleDisconnect() {
+        // Close WebSocket connection
         if (this.ws) {
             this.ws.close();
+            this.ws = null;
         }
+        
+        // Reset connection state
         this.isConnected = false;
         this.authToken = null;
+        
+        // Clear token input
         this.tokenInput.value = '';
-        this.hideAuthModal();
+        
+        // Clear chat messages
+        this.chatMessages.innerHTML = '';
+        
+        // Reset connection status
+        this.updateConnectionStatus('disconnected');
+        
+        // Hide tool status
+        this.hideToolStatus();
+        
+        // Reset tools count
+        this.toolsCount.textContent = 'Loading...';
+        
+        // Show authentication modal
         this.showAuthModal();
+        
+        // Hide chat interface
+        this.chatContainer.style.display = 'none';
     }
 
     clearChat() {
