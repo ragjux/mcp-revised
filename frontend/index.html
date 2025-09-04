@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MCP Chat Assistant</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="chat-container">
+        <!-- Header -->
+        <div class="chat-header">
+            <div class="header-content">
+                <div class="logo">
+                    <i class="fas fa-robot"></i>
+                    <h1>MCP Assistant</h1>
+                </div>
+                <div class="connection-status" id="connectionStatus">
+                    <i class="fas fa-circle"></i>
+                    <span>Connecting...</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Chat Messages -->
+        <div class="chat-messages" id="chatMessages">
+            <div class="welcome-message">
+                <div class="message bot-message">
+                    <div class="message-avatar">
+                        <i class="fas fa-robot"></i>
+                    </div>
+                    <div class="message-content">
+                        <div class="message-text">
+                            Hello! I'm your MCP Assistant. I can help you with:
+                            <ul>
+                                <li>📱 WhatsApp messaging</li>
+                                <li>📊 Google Sheets management</li>
+                                <li>📈 Google Slides presentations</li>
+                                <li>📝 Google Forms creation</li>
+                            </ul>
+                            What would you like to do today?
+                        </div>
+                        <div class="message-time" id="welcomeTime"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tool Status -->
+        <div class="tool-status" id="toolStatus" style="display: none;">
+            <div class="tool-indicator">
+                <i class="fas fa-cog fa-spin"></i>
+                <span id="toolStatusText">Using tools...</span>
+            </div>
+        </div>
+
+        <!-- Input Area -->
+        <div class="chat-input-container">
+            <div class="chat-input-wrapper">
+                <textarea 
+                    id="messageInput" 
+                    placeholder="Type your message here... (Shift+Enter for new line, Enter to send)"
+                    rows="1"
+                ></textarea>
+                <button id="sendButton" class="send-button" disabled>
+                    <i class="fas fa-paper-plane"></i>
+                </button>
+            </div>
+            <div class="input-footer">
+                <div class="available-tools" id="availableTools">
+                    <span class="tools-label">Available tools:</span>
+                    <span class="tools-count" id="toolsCount">Loading...</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="loading-content">
+            <div class="loading-spinner"></div>
+            <p>Connecting to MCP Assistant...</p>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

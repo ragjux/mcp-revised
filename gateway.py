@@ -27,6 +27,9 @@ ZOOM_SERVER = str(BASE_DIR / "servers" / "Zoom_mcp.py")
 GOOGLE_ADS_SERVER = str(BASE_DIR / "servers" / "google_ads_mcp.py")
 GOOGLE_ANALYTICS_SERVER = str(BASE_DIR / "servers" / "google_analytics_mcp.py")
 GOOGLE_TASK_SERVER = str(BASE_DIR / "servers" / "google_task_mcp.py")
+GS_SERVER = str(BASE_DIR / "servers" / "google_sheets_mcp.py")
+GSLIDES_SERVER = str(BASE_DIR / "servers" / "google_slide_mcp.py")
+GFORMS_SERVER = str(BASE_DIR / "servers" / "google_form_mcp.py")
 PY = sys.executable  # launch sub-servers with the same venv interpreter
 
 MCP_CONFIG = {
