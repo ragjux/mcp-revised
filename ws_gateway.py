@@ -17,7 +17,7 @@ load_dotenv()
 # -------------------------
 MCP_BASE      = os.getenv("MCP_BASE", "http://localhost:8080/mcp")
 MCP_PROTO     = os.getenv("MCP_PROTO", "2025-06-18")
-OPENAI_MODEL  = os.getenv("OPENAI_MODEL", "gpt-4o")
+OPENAI_MODEL  = os.getenv("OPENAI_MODEL", "gpt-5-mini")
 OPENAI_APIKEY = os.getenv("OPENAI_API_KEY", "")
 TIMEOUT_S     = float(os.getenv("HTTP_TIMEOUT", "45"))
 

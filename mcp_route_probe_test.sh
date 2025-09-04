@@ -70,22 +70,22 @@ curl -sS "$BASE" \
 
 # # Get Active Companies
 
-#   curl -X POST "http://localhost:8080/mcp" \
-#   -H "Content-Type: application/json" \
-#   -H "Accept: application/json,text/event-stream" \
-#   -H "MCP-Protocol-Version: 2025-06-18" \
-#   -H "Mcp-Session-Id: YOUR_SESSION_ID_HERE" \
-#   -d '{
-#     "jsonrpc": "2.0",
-#     "id": 3,
-#     "method": "tools/call",
-#     "params": {
-#       "name": "hubspot_hubspot_get_active_companies",
-#       "arguments": {
-#         "limit": 10
-#       }
-#     }
-#   }'
+  # curl -X POST "http://localhost:8080/mcp" \
+  # -H "Content-Type: application/json" \
+  # -H "Accept: application/json,text/event-stream" \
+  # -H "MCP-Protocol-Version: 2025-06-18" \
+  # -H "Mcp-Session-Id: YOUR_SESSION_ID_HERE" \
+  # -d '{
+  #   "jsonrpc": "2.0",
+  #   "id": 3,
+  #   "method": "tools/call",
+  #   "params": {
+  #     "name": "hubspot_hubspot_get_active_companies",
+  #     "arguments": {
+  #       "limit": 10
+  #     }
+  #   }
+  # }'
 
 # # Search Companies
 
