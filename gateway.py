@@ -75,6 +75,8 @@ SERVER_PATHS = {
     "woocommerce": str(BASE_DIR / "servers" / "Woocommerce_mcp.py"),
     "youtube_analytics": str(BASE_DIR / "servers" / "Youtube_analytics_mcp.py"),
     "zendesk": str(BASE_DIR / "servers" / "Zendesk_mcp.py"),
+    "selenium": str(BASE_DIR / "servers" / "selenium_mcp.py"),
+    "captcha_solver": str(BASE_DIR / "servers" / "captcha_solver.py"),
 }
 
 def has_required_tokens(required_vars: list) -> bool:
@@ -399,6 +401,14 @@ def get_server_config(server_name: str) -> dict:
             "ZENDESK_TOKEN": os.environ.get("ZENDESK_TOKEN", ""),
             "ZENDESK_SUBDOMAIN": os.environ.get("ZENDESK_SUBDOMAIN", ""),
         },
+        "selenium": {
+            "DRY_RUN": os.environ.get("DRY_RUN", "0"), "LOG_LEVEL": "INFO",
+            # Selenium doesn't need any API keys - uses local browser installation
+        },
+        "captcha_solver": {
+            "DRY_RUN": os.environ.get("DRY_RUN", "0"), "LOG_LEVEL": "INFO",
+            "GOOGLE_API_KEY": os.environ.get("GOOGLE_API_KEY", ""),
+        },
     }
     
     config = {
@@ -472,6 +482,8 @@ def build_mcp_config():
         "woocommerce": ["WOOCOMMERCE_URL", "WOOCOMMERCE_CONSUMER_KEY", "WOOCOMMERCE_CONSUMER_SECRET"],
         "youtube_analytics": ["YOUTUBE_ANALYTICS_CLIENT_ID", "YOUTUBE_ANALYTICS_CLIENT_SECRET"],
         "zendesk": ["ZENDESK_EMAIL", "ZENDESK_TOKEN", "ZENDESK_SUBDOMAIN"],
+        "selenium": [],  # No environment variables required - always load
+        "captcha_solver": ["GOOGLE_API_KEY"],
     }
     
     config = {"mcpServers": {}}
