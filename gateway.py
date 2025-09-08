@@ -70,6 +70,38 @@ SERVER_PATHS = {
     "google_ads": str(BASE_DIR / "servers" / "google_ads_mcp.py"),
     "google_analytics": str(BASE_DIR / "servers" / "google_analytics_mcp.py"),
     "google_task": str(BASE_DIR / "servers" / "google_task_mcp.py"),
+    "apollo": str(BASE_DIR / "servers" / "Apollo.io_mcp.py"),
+    "bigquery": str(BASE_DIR / "servers" / "Bigquery_mcp.py"),
+    "clay": str(BASE_DIR / "servers" / "Clay_mcp.py"),
+    "clickup": str(BASE_DIR / "servers" / "Clickup_mcp.py"),
+    "databricks": str(BASE_DIR / "servers" / "Databricks_mcp.py"),
+    "discord": str(BASE_DIR / "servers" / "Discord_mcp.py"),
+    "facebook_ads": str(BASE_DIR / "servers" / "Facebook_ads_mcp.py"),
+    "firecrawl": str(BASE_DIR / "servers" / "FireCrawl_mcp.py"),
+    "googlemaps": str(BASE_DIR / "servers" / "Googlemaps_mcp.py"),
+    "hyperbrowser": str(BASE_DIR / "servers" / "HyperBrowser_mcp.py"),
+    "instantly": str(BASE_DIR / "servers" / "Instantly_mcp.py"),
+    "intercom": str(BASE_DIR / "servers" / "Intercom_mcp.py"),
+    "jira": str(BASE_DIR / "servers" / "Jira_mcp.py"),
+    "linkedin_ads": str(BASE_DIR / "servers" / "LinkdinAds_mcp.py"),
+    "mailchimp": str(BASE_DIR / "servers" / "Mailchimp_mcp.py"),
+    "monday": str(BASE_DIR / "servers" / "Monday_mcpy.py"),
+    "msword": str(BASE_DIR / "servers" / "MSWord_mcp.py"),
+    "odoo": str(BASE_DIR / "servers" / "Odoo_mcp.py"),
+    "outlook": str(BASE_DIR / "servers" / "Outlook_mcp.py"),
+    "pipedrive": str(BASE_DIR / "servers" / "Pipedrive_mcp.py"),
+    "quickbooks": str(BASE_DIR / "servers" / "Quickbooks_mcp.py"),
+    "reddit": str(BASE_DIR / "servers" / "Reddit_mcp.py"),
+    "servicenow": str(BASE_DIR / "servers" / "Servicenow_mcp.py"),
+    "shopify": str(BASE_DIR / "servers" / "Shopify_mcp.py"),
+    "stripe": str(BASE_DIR / "servers" / "Stripe_mcp.py"),
+    "telegram": str(BASE_DIR / "servers" / "Telegram_mcp.py"),
+    "tiktok": str(BASE_DIR / "servers" / "TikTok_mcp.py"),
+    "trello": str(BASE_DIR / "servers" / "Trello_mcp.py"),
+    "twitter_ads": str(BASE_DIR / "servers" / "Twitterads_mcp.py"),
+    "woocommerce": str(BASE_DIR / "servers" / "Woocommerce_mcp.py"),
+    "youtube_analytics": str(BASE_DIR / "servers" / "Youtube_analytics_mcp.py"),
+    "zendesk": str(BASE_DIR / "servers" / "Zendesk_mcp.py"),
 }
 
 def has_required_tokens(required_vars: list) -> bool:
@@ -283,18 +315,274 @@ def get_server_config(server_name: str) -> dict:
             },
         },
         "google_task": {
-            "command": PY,
-            "args": [GOOGLE_TASK_SERVER],
-            "transport": "stdio",
-            "env": {
-                "DRY_RUN": os.environ.get("DRY_RUN", "0"), "LOG_LEVEL": "INFO",
-                "TOKEN_PATH": os.environ.get("TOKEN_PATH", "gcp-oauth.keys.json"),
-                "CREDENTIALS_PATH": os.environ.get("CREDENTIALS_PATH", "credentials.json"),
->>>>>>>>> Temporary merge branch 2
-            },
+            "DRY_RUN": os.environ.get("DRY_RUN", "0"), "LOG_LEVEL": "INFO",
+            "TOKEN_PATH": os.environ.get("TOKEN_PATH", "gcp-oauth.keys.json"),
+            "CREDENTIALS_PATH": os.environ.get("CREDENTIALS_PATH", "credentials.json"),
+        },
+        "apollo": {
+            "DRY_RUN": os.environ.get("DRY_RUN", "0"), "LOG_LEVEL": "INFO",
+            "APOLLO_IO_API_KEY": os.environ.get("APOLLO_IO_API_KEY", ""),
+        },
+        "bigquery": {
+            "DRY_RUN": os.environ.get("DRY_RUN", "0"), "LOG_LEVEL": "INFO",
+            "BIGQUERY_AUTH_TYPE": os.environ.get("BIGQUERY_AUTH_TYPE", "service_account"),
+            "BIGQUERY_CREDENTIALS_PATH": os.environ.get("BIGQUERY_CREDENTIALS_PATH", ""),
+            "BIGQUERY_TOKEN_PATH": os.environ.get("BIGQUERY_TOKEN_PATH", "bq_token.json"),
+            "BIGQUERY_PROJECT_ID": os.environ.get("BIGQUERY_PROJECT_ID", ""),
+            "BIGQUERY_DATASET_ID": os.environ.get("BIGQUERY_DATASET_ID", ""),
+        },
+        "clay": {
+            "DRY_RUN": os.environ.get("DRY_RUN", "0"), "LOG_LEVEL": "INFO",
+            "CLAY_API_KEY": os.environ.get("CLAY_API_KEY", ""),
+        },
+        "clickup": {
+            "DRY_RUN": os.environ.get("DRY_RUN", "0"), "LOG_LEVEL": "INFO",
+            "CLICKUP_API_TOKEN": os.environ.get("CLICKUP_API_TOKEN", ""),
+        },
+        "databricks": {
+            "DRY_RUN": os.environ.get("DRY_RUN", "0"), "LOG_LEVEL": "INFO",
+            "DATABRICKS_HOST": os.environ.get("DATABRICKS_HOST", ""),
+            "DATABRICKS_TOKEN": os.environ.get("DATABRICKS_TOKEN", ""),
+        },
+        "discord": {
+            "DRY_RUN": os.environ.get("DRY_RUN", "0"), "LOG_LEVEL": "INFO",
+            "DISCORD_TOKEN": os.environ.get("DISCORD_TOKEN", ""),
+            "DISCORD_GUILD_ID": os.environ.get("DISCORD_GUILD_ID", ""),
+        },
+        "facebook_ads": {
+            "DRY_RUN": os.environ.get("DRY_RUN", "0"), "LOG_LEVEL": "INFO",
+            "FACEBOOK_ACCESS_TOKEN": os.environ.get("FACEBOOK_ACCESS_TOKEN", ""),
+            "FACEBOOK_AD_ACCOUNT_ID": os.environ.get("FACEBOOK_AD_ACCOUNT_ID", ""),
+        },
+        "firecrawl": {
+            "DRY_RUN": os.environ.get("DRY_RUN", "0"), "LOG_LEVEL": "INFO",
+            "FIRECRAWL_API_KEY": os.environ.get("FIRECRAWL_API_KEY", ""),
+        },
+        "googlemaps": {
+            "DRY_RUN": os.environ.get("DRY_RUN", "0"), "LOG_LEVEL": "INFO",
+            "GOOGLE_MAPS_API_KEY": os.environ.get("GOOGLE_MAPS_API_KEY", ""),
+        },
+        "hyperbrowser": {
+            "DRY_RUN": os.environ.get("DRY_RUN", "0"), "LOG_LEVEL": "INFO",
+            "HYPERBROWSER_API_KEY": os.environ.get("HYPERBROWSER_API_KEY", ""),
+        },
+        "instantly": {
+            "DRY_RUN": os.environ.get("DRY_RUN", "0"), "LOG_LEVEL": "INFO",
+            "INSTANTLY_API_KEY": os.environ.get("INSTANTLY_API_KEY", ""),
+        },
+        "intercom": {
+            "DRY_RUN": os.environ.get("DRY_RUN", "0"), "LOG_LEVEL": "INFO",
+            "INTERCOM_ACCESS_TOKEN": os.environ.get("INTERCOM_ACCESS_TOKEN", ""),
+        },
+        "jira": {
+            "DRY_RUN": os.environ.get("DRY_RUN", "0"), "LOG_LEVEL": "INFO",
+            "JIRA_HOST": os.environ.get("JIRA_HOST", ""),
+            "JIRA_EMAIL": os.environ.get("JIRA_EMAIL", ""),
+            "JIRA_API_TOKEN": os.environ.get("JIRA_API_TOKEN", ""),
+        },
+        "linkedin_ads": {
+            "DRY_RUN": os.environ.get("DRY_RUN", "0"), "LOG_LEVEL": "INFO",
+            "LINKEDIN_ADS_ACCESS_TOKEN": os.environ.get("LINKEDIN_ADS_ACCESS_TOKEN", ""),
+            "LINKEDIN_ADS_ACCOUNT_ID": os.environ.get("LINKEDIN_ADS_ACCOUNT_ID", ""),
+        },
+        "mailchimp": {
+            "DRY_RUN": os.environ.get("DRY_RUN", "0"), "LOG_LEVEL": "INFO",
+            "MAILCHIMP_API_KEY": os.environ.get("MAILCHIMP_API_KEY", ""),
+            "MAILCHIMP_SERVER_PREFIX": os.environ.get("MAILCHIMP_SERVER_PREFIX", ""),
+        },
+        "monday": {
+            "DRY_RUN": os.environ.get("DRY_RUN", "0"), "LOG_LEVEL": "INFO",
+            "MONDAY_API_TOKEN": os.environ.get("MONDAY_API_TOKEN", ""),
+        },
+        "msword": {
+            "DRY_RUN": os.environ.get("DRY_RUN", "0"), "LOG_LEVEL": "INFO",
+            "MSWORD_CLIENT_ID": os.environ.get("MSWORD_CLIENT_ID", ""),
+            "MSWORD_CLIENT_SECRET": os.environ.get("MSWORD_CLIENT_SECRET", ""),
+            "MSWORD_TENANT_ID": os.environ.get("MSWORD_TENANT_ID", ""),
+        },
+        "odoo": {
+            "DRY_RUN": os.environ.get("DRY_RUN", "0"), "LOG_LEVEL": "INFO",
+            "ODOO_URL": os.environ.get("ODOO_URL", ""),
+            "ODOO_DATABASE": os.environ.get("ODOO_DATABASE", ""),
+            "ODOO_USERNAME": os.environ.get("ODOO_USERNAME", ""),
+            "ODOO_PASSWORD": os.environ.get("ODOO_PASSWORD", ""),
+        },
+        "outlook": {
+            "DRY_RUN": os.environ.get("DRY_RUN", "0"), "LOG_LEVEL": "INFO",
+            "OUTLOOK_CLIENT_ID": os.environ.get("OUTLOOK_CLIENT_ID", ""),
+            "OUTLOOK_CLIENT_SECRET": os.environ.get("OUTLOOK_CLIENT_SECRET", ""),
+            "OUTLOOK_TENANT_ID": os.environ.get("OUTLOOK_TENANT_ID", ""),
+        },
+        "pipedrive": {
+            "DRY_RUN": os.environ.get("DRY_RUN", "0"), "LOG_LEVEL": "INFO",
+            "PIPEDRIVE_API_TOKEN": os.environ.get("PIPEDRIVE_API_TOKEN", ""),
+        },
+        "quickbooks": {
+            "DRY_RUN": os.environ.get("DRY_RUN", "0"), "LOG_LEVEL": "INFO",
+            "QUICKBOOKS_CLIENT_ID": os.environ.get("QUICKBOOKS_CLIENT_ID", ""),
+            "QUICKBOOKS_CLIENT_SECRET": os.environ.get("QUICKBOOKS_CLIENT_SECRET", ""),
+            "QUICKBOOKS_REALM_ID": os.environ.get("QUICKBOOKS_REALM_ID", ""),
+            "QUICKBOOKS_ACCESS_TOKEN": os.environ.get("QUICKBOOKS_ACCESS_TOKEN", ""),
+            "QUICKBOOKS_REFRESH_TOKEN": os.environ.get("QUICKBOOKS_REFRESH_TOKEN", ""),
+        },
+        "reddit": {
+            "DRY_RUN": os.environ.get("DRY_RUN", "0"), "LOG_LEVEL": "INFO",
+            "REDDIT_CLIENT_ID": os.environ.get("REDDIT_CLIENT_ID", ""),
+            "REDDIT_CLIENT_SECRET": os.environ.get("REDDIT_CLIENT_SECRET", ""),
+            "REDDIT_USERNAME": os.environ.get("REDDIT_USERNAME", ""),
+            "REDDIT_PASSWORD": os.environ.get("REDDIT_PASSWORD", ""),
+        },
+        "servicenow": {
+            "DRY_RUN": os.environ.get("DRY_RUN", "0"), "LOG_LEVEL": "INFO",
+            "SERVICENOW_INSTANCE": os.environ.get("SERVICENOW_INSTANCE", ""),
+            "SERVICENOW_USERNAME": os.environ.get("SERVICENOW_USERNAME", ""),
+            "SERVICENOW_PASSWORD": os.environ.get("SERVICENOW_PASSWORD", ""),
+        },
+        "shopify": {
+            "DRY_RUN": os.environ.get("DRY_RUN", "0"), "LOG_LEVEL": "INFO",
+            "SHOPIFY_ACCESS_TOKEN": os.environ.get("SHOPIFY_ACCESS_TOKEN", ""),
+            "MYSHOPIFY_DOMAIN": os.environ.get("MYSHOPIFY_DOMAIN", ""),
+        },
+        "stripe": {
+            "DRY_RUN": os.environ.get("DRY_RUN", "0"), "LOG_LEVEL": "INFO",
+            "STRIPE_SECRET_KEY": os.environ.get("STRIPE_SECRET_KEY", ""),
+            "STRIPE_ACCOUNT": os.environ.get("STRIPE_ACCOUNT", ""),
+        },
+        "telegram": {
+            "DRY_RUN": os.environ.get("DRY_RUN", "0"), "LOG_LEVEL": "INFO",
+            "TELEGRAM_API_ID": os.environ.get("TELEGRAM_API_ID", ""),
+            "TELEGRAM_API_HASH": os.environ.get("TELEGRAM_API_HASH", ""),
+            "TELEGRAM_PHONE": os.environ.get("TELEGRAM_PHONE", ""),
+            "TELEGRAM_SESSION": os.environ.get("TELEGRAM_SESSION", "telegram.session"),
+        },
+        "tiktok": {
+            "DRY_RUN": os.environ.get("DRY_RUN", "0"), "LOG_LEVEL": "INFO",
+            "TIKTOK_ACCESS_TOKEN": os.environ.get("TIKTOK_ACCESS_TOKEN", ""),
+            "TIKTOK_ADVERTISER_ID": os.environ.get("TIKTOK_ADVERTISER_ID", ""),
+        },
+        "trello": {
+            "DRY_RUN": os.environ.get("DRY_RUN", "0"), "LOG_LEVEL": "INFO",
+            "TRELLO_API_KEY": os.environ.get("TRELLO_API_KEY", ""),
+            "TRELLO_TOKEN": os.environ.get("TRELLO_TOKEN", ""),
+            "TRELLO_BOARD_ID": os.environ.get("TRELLO_BOARD_ID", ""),
+            "TRELLO_WORKSPACE_ID": os.environ.get("TRELLO_WORKSPACE_ID", ""),
+        },
+        "twitter_ads": {
+            "DRY_RUN": os.environ.get("DRY_RUN", "0"), "LOG_LEVEL": "INFO",
+            "TWITTER_ADS_BEARER_TOKEN": os.environ.get("TWITTER_ADS_BEARER_TOKEN", ""),
+            "TWITTER_ADS_ACCOUNT_ID": os.environ.get("TWITTER_ADS_ACCOUNT_ID", ""),
+        },
+        "woocommerce": {
+            "DRY_RUN": os.environ.get("DRY_RUN", "0"), "LOG_LEVEL": "INFO",
+            "WOOCOMMERCE_URL": os.environ.get("WOOCOMMERCE_URL", ""),
+            "WOOCOMMERCE_CONSUMER_KEY": os.environ.get("WOOCOMMERCE_CONSUMER_KEY", ""),
+            "WOOCOMMERCE_CONSUMER_SECRET": os.environ.get("WOOCOMMERCE_CONSUMER_SECRET", ""),
+        },
+        "youtube_analytics": {
+            "DRY_RUN": os.environ.get("DRY_RUN", "0"), "LOG_LEVEL": "INFO",
+            "YOUTUBE_ANALYTICS_CLIENT_ID": os.environ.get("YOUTUBE_ANALYTICS_CLIENT_ID", ""),
+            "YOUTUBE_ANALYTICS_CLIENT_SECRET": os.environ.get("YOUTUBE_ANALYTICS_CLIENT_SECRET", ""),
+            "YOUTUBE_ANALYTICS_REFRESH_TOKEN": os.environ.get("YOUTUBE_ANALYTICS_REFRESH_TOKEN", ""),
+        },
+        "zendesk": {
+            "DRY_RUN": os.environ.get("DRY_RUN", "0"), "LOG_LEVEL": "INFO",
+            "ZENDESK_EMAIL": os.environ.get("ZENDESK_EMAIL", ""),
+            "ZENDESK_TOKEN": os.environ.get("ZENDESK_TOKEN", ""),
+            "ZENDESK_SUBDOMAIN": os.environ.get("ZENDESK_SUBDOMAIN", ""),
         },
     }
-}
+    
+    config = {
+        "command": PY,
+        "args": [server_path],
+        "transport": "stdio",
+        "env": server_envs[server_name]
+    }
+    log.debug(f"Generated config for {server_name}: {server_path}")
+    return config
+
+def build_mcp_config():
+    """Build MCP configuration dynamically - only load servers with valid tokens"""
+    log.info("🔍 Checking available MCP servers...")
+    
+    # Define server requirements (required environment variables for each server)
+    server_requirements = {
+        "whatsapp": ["META_WA_ACCESS_TOKEN", "META_WA_PHONE_NUMBER_ID"],
+        "sheets": ["GSHEETS_ACCESS_TOKEN", "GSHEETS_REFRESH_TOKEN"],
+        "google_slides_mcp": ["GSLIDES_ACCESS_TOKEN", "GSLIDES_REFRESH_TOKEN"],
+        "google_forms_mcp": ["GFORMS_ACCESS_TOKEN"],
+        "gmail": ["SMTP_USERNAME", "SMTP_PASSWORD"],
+        "chat": ["GOOGLE_CHAT_ACCESS_TOKEN", "GOOGLE_CHAT_REFRESH_TOKEN"],
+        "drive": ["GOOGLE_DRIVE_ACCESS_TOKEN", "GOOGLE_DRIVE_REFRESH_TOKEN"],
+        "docs": ["GOOGLE_DOCS_ACCESS_TOKEN", "GOOGLE_DOCS_REFRESH_TOKEN"],
+        "calendar": ["GOOGLE_CALENDAR_ACCESS_TOKEN", "GOOGLE_CALENDAR_REFRESH_TOKEN"],
+        "hubspot": ["HUBSPOT_ACCESS_TOKEN"],
+        "slack": ["SLACK_BOT_TOKEN"],
+        "airtable": ["AIRTABLE_API_KEY"],
+        "notion": ["NOTION_API_KEY"],
+        "wordpress": ["WP_SITE_URL", "WP_USERNAME", "WP_APP_PASSWORD"],
+        "calendly": ["CALENDLY_API_KEY", "CALENDLY_ACCESS_TOKEN"],
+        "asana": ["ASANA_ACCESS_TOKEN"],
+        "freshdesk": ["FRESHDESK_API_KEY", "FRESHDESK_DOMAIN"],
+        "salesforce": ["SALESFORCE_USERNAME", "SALESFORCE_PASSWORD", "SALESFORCE_TOKEN", "SALESFORCE_INSTANCE_URL"],
+        "hygen": ["HEYGEN_API_KEY"],
+        "sendgrid": ["SENDGRID_API_KEY", "FROM_EMAIL"],
+        "zoom": ["ZOOM_API_KEY", "ZOOM_API_SECRET", "ZOOM_ACCOUNT_ID"],
+        "google_ads": ["GOOGLE_ADS_DEVELOPER_TOKEN"],
+        "google_analytics": ["TOKEN_PATH", "CREDENTIALS_PATH"],
+        "google_task": ["TOKEN_PATH", "CREDENTIALS_PATH"],
+        "apollo": ["APOLLO_IO_API_KEY"],
+        "bigquery": ["BIGQUERY_PROJECT_ID"],
+        "clay": ["CLAY_API_KEY"],
+        "clickup": ["CLICKUP_API_TOKEN"],
+        "databricks": ["DATABRICKS_HOST", "DATABRICKS_TOKEN"],
+        "discord": ["DISCORD_TOKEN"],
+        "facebook_ads": ["FACEBOOK_ACCESS_TOKEN"],
+        "firecrawl": ["FIRECRAWL_API_KEY"],
+        "googlemaps": ["GOOGLE_MAPS_API_KEY"],
+        "hyperbrowser": ["HYPERBROWSER_API_KEY"],
+        "instantly": ["INSTANTLY_API_KEY"],
+        "intercom": ["INTERCOM_ACCESS_TOKEN"],
+        "jira": ["JIRA_HOST", "JIRA_EMAIL", "JIRA_API_TOKEN"],
+        "linkedin_ads": ["LINKEDIN_ADS_ACCESS_TOKEN"],
+        "mailchimp": ["MAILCHIMP_API_KEY"],
+        "monday": ["MONDAY_API_TOKEN"],
+        "msword": ["MSWORD_CLIENT_ID", "MSWORD_CLIENT_SECRET"],
+        "odoo": ["ODOO_URL", "ODOO_USERNAME", "ODOO_PASSWORD"],
+        "outlook": ["OUTLOOK_CLIENT_ID", "OUTLOOK_CLIENT_SECRET"],
+        "pipedrive": ["PIPEDRIVE_API_TOKEN"],
+        "quickbooks": ["QUICKBOOKS_CLIENT_ID", "QUICKBOOKS_CLIENT_SECRET"],
+        "reddit": ["REDDIT_CLIENT_ID", "REDDIT_CLIENT_SECRET"],
+        "servicenow": ["SERVICENOW_INSTANCE", "SERVICENOW_USERNAME", "SERVICENOW_PASSWORD"],
+        "shopify": ["SHOPIFY_ACCESS_TOKEN", "MYSHOPIFY_DOMAIN"],
+        "stripe": ["STRIPE_SECRET_KEY"],
+        "telegram": ["TELEGRAM_API_ID", "TELEGRAM_API_HASH"],
+        "tiktok": ["TIKTOK_ACCESS_TOKEN"],
+        "trello": ["TRELLO_API_KEY", "TRELLO_TOKEN"],
+        "twitter_ads": ["TWITTER_ADS_BEARER_TOKEN"],
+        "woocommerce": ["WOOCOMMERCE_URL", "WOOCOMMERCE_CONSUMER_KEY", "WOOCOMMERCE_CONSUMER_SECRET"],
+        "youtube_analytics": ["YOUTUBE_ANALYTICS_CLIENT_ID", "YOUTUBE_ANALYTICS_CLIENT_SECRET"],
+        "zendesk": ["ZENDESK_EMAIL", "ZENDESK_TOKEN", "ZENDESK_SUBDOMAIN"],
+    }
+    
+    config = {"mcpServers": {}}
+    loaded_count = 0
+    skipped_count = 0
+    
+    # Only add servers with valid tokens
+    for server_name, required_vars in server_requirements.items():
+        if has_required_tokens(required_vars):
+            config["mcpServers"][server_name] = get_server_config(server_name)
+            log.info(f"✅ Loaded {server_name} server")
+            loaded_count += 1
+        else:
+            log.info(f"⏭️  Skipped {server_name} server (missing tokens)")
+            skipped_count += 1
+    
+    log.info(f"📊 Summary: {loaded_count} servers loaded, {skipped_count} servers skipped")
+    log.info(f"🚀 Starting MCP Gateway with {loaded_count} active servers")
+    
+    return config
 
 def build_proxy_sync():
     """Create the MCP proxy with dynamic configuration and handle async/sync creation"""
