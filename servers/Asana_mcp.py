@@ -8,7 +8,11 @@ import os
 import httpx
 from typing import Any, Dict, List, Optional
 from fastmcp import FastMCP
+from dotenv import load_dotenv
 import logging
+
+# Load environment variables from .env file
+load_dotenv()
 
 logging.basicConfig(level=os.getenv("LOG_LEVEL", "INFO"))
 DRY_RUN = os.getenv("DRY_RUN", "0") == "1"

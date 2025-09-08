@@ -8,7 +8,11 @@ import os
 import json
 from typing import Any, Dict, Optional
 from fastmcp import FastMCP
+from dotenv import load_dotenv
 from google.oauth2 import service_account
+
+# Load environment variables from .env file
+load_dotenv()
 from google.oauth2.credentials import Credentials
 from google.auth.transport.requests import Request
 from google_auth_oauthlib.flow import InstalledAppFlow
@@ -21,14 +25,14 @@ DRY_RUN = os.getenv("DRY_RUN", "0") == "1"
 # OAuth and Service Account scopes for Google Ads API
 SCOPES = ["https://www.googleapis.com/auth/adwords"]
 
-TOKEN_PATH = os.getenv("GOOGLE_ADS_TOKEN_PATH", "token.json")
-CREDENTIALS_PATH = os.getenv("GOOGLE_ADS_CREDENTIALS_PATH", "credentials.json")
-AUTH_TYPE = os.getenv("GOOGLE_ADS_AUTH_TYPE", "service_account")
-DEVELOPER_TOKEN = os.getenv("GOOGLE_ADS_DEVELOPER_TOKEN", "")
-LOGIN_CUSTOMER_ID = os.getenv("GOOGLE_ADS_LOGIN_CUSTOMER_ID", None)
+TOKEN_PATH = os.getenv("GADS_TOKEN_PATH", "token.json")
+CREDENTIALS_PATH = os.getenv("GADS_CREDENTIALS_PATH", "credentials.json")
+AUTH_TYPE = os.getenv("GADS_AUTH_TYPE", "service_account")
+DEVELOPER_TOKEN = os.getenv("GADS_DEVELOPER_TOKEN", "")
+LOGIN_CUSTOMER_ID = os.getenv("GADS_LOGIN_CUSTOMER_ID", None)
 
 if not DEVELOPER_TOKEN:
-    raise RuntimeError("Set GOOGLE_ADS_DEVELOPER_TOKEN environment variable")
+    raise RuntimeError("Set GADS_DEVELOPER_TOKEN environment variable")
 
 mcp = FastMCP("Google Ads MCP (native)")
 

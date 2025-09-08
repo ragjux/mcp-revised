@@ -6,7 +6,11 @@ import email
 import requests
 from typing import Any, Dict, List, Optional
 from fastmcp import FastMCP
+from dotenv import load_dotenv
 from email.mime.text import MIMEText
+
+# Load environment variables from .env file
+load_dotenv()
 from email.mime.multipart import MIMEMultipart
 from email.mime.base import MIMEBase
 from email import encoders

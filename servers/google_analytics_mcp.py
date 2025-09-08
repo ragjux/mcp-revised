@@ -7,7 +7,11 @@ A Model Context Protocol (MCP) server for Google Analytics operations.
 import os
 from typing import Any, Dict, Optional
 from fastmcp import FastMCP
+from dotenv import load_dotenv
 from google.oauth2.credentials import Credentials
+
+# Load environment variables from .env file
+load_dotenv()
 from google_auth_oauthlib.flow import InstalledAppFlow
 from google.auth.transport.requests import Request
 from googleapiclient.discovery import build
@@ -17,11 +21,11 @@ logging.basicConfig(level=os.getenv("LOG_LEVEL", "INFO"))
 DRY_RUN = os.getenv("DRY_RUN", "0") == "1"
 
 SCOPES = ["https://www.googleapis.com/auth/analytics.readonly"]
-TOKEN_PATH = os.getenv("TOKEN_PATH", "token.json")
-CREDENTIALS_PATH = os.getenv("CREDENTIALS_PATH", "credentials.json")
+TOKEN_PATH = os.getenv("GANALYTICS_TOKEN_PATH", "token.json")
+CREDENTIALS_PATH = os.getenv("GANALYTICS_CREDENTIALS_PATH", "credentials.json")
 
 if not CREDENTIALS_PATH or not os.path.exists(CREDENTIALS_PATH):
-    raise RuntimeError("Provide a valid CREDENTIALS_PATH to your OAuth client secrets JSON file")
+    raise RuntimeError("Provide a valid GANALYTICS_CREDENTIALS_PATH to your OAuth client secrets JSON file")
 
 mcp = FastMCP("Google Analytics MCP (native)")
 

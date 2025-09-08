@@ -8,8 +8,11 @@ import os
 import httpx
 from typing import Any, Dict, List, Optional
 from fastmcp import FastMCP
+from dotenv import load_dotenv
 import logging
 
+# Load environment variables from .env file
+load_dotenv()
 logging.basicConfig(level=os.getenv("LOG_LEVEL", "INFO"))
 DRY_RUN = os.getenv("DRY_RUN", "0") == "1"
 
@@ -48,11 +51,12 @@ async def _make_request(method: str, endpoint: str, params: Optional[Dict] = Non
 
 @mcp.tool()
 async def notion_list_databases() -> Dict[str, Any]:
-    """List all Notion databases shared with the integration."""
+    """List all Notion databases shared with the integration using search API."""
     if DRY_RUN:
         return _dry("list_databases")
     try:
-        data = await _make_request("GET", "/databases")
+        # Use search API to find databases (the /databases endpoint is deprecated)
+        data = await _make_request("POST", "/search", json_data={"filter": {"value": "database", "property": "object"}})
         databases = data.get("results", [])
         return {"databases": databases, "count": len(databases)}
     except Exception as e:

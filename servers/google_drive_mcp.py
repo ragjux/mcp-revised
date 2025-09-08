@@ -9,7 +9,10 @@ import json
 import httpx
 from typing import Any, Dict, List, Optional
 from fastmcp import FastMCP
+from dotenv import load_dotenv
 
+# Load environment variables from .env file
+load_dotenv()
 import logging
 logging.basicConfig(level=os.getenv("LOG_LEVEL", "INFO"))
 DRY_RUN = os.getenv("DRY_RUN", "0") == "1"
@@ -19,11 +22,11 @@ def _dry(name: str, **kwargs):
     return {"dry_run": True, "tool": f"drive_{name}", "args": kwargs}
 
 # Environment variables for token-only authentication
-ACCESS_TOKEN = os.getenv("GOOGLE_DRIVE_ACCESS_TOKEN", "")
-REFRESH_TOKEN = os.getenv("GOOGLE_DRIVE_REFRESH_TOKEN", "")
+ACCESS_TOKEN = os.getenv("GDRIVE_ACCESS_TOKEN", "")
+REFRESH_TOKEN = os.getenv("GDRIVE_REFRESH_TOKEN", "")
 
 if not ACCESS_TOKEN or not REFRESH_TOKEN:
-    raise RuntimeError("Set GOOGLE_DRIVE_ACCESS_TOKEN and GOOGLE_DRIVE_REFRESH_TOKEN environment variables")
+    raise RuntimeError("Set GDRIVE_ACCESS_TOKEN and GDRIVE_REFRESH_TOKEN environment variables")
 
 DRIVE_BASE = "https://www.googleapis.com/drive/v3"
 

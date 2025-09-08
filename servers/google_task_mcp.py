@@ -9,7 +9,11 @@ import json
 import datetime
 from typing import Any, Dict, List, Optional
 from fastmcp import FastMCP
+from dotenv import load_dotenv
 from google.oauth2.credentials import Credentials
+
+# Load environment variables from .env file
+load_dotenv()
 from google_auth_oauthlib.flow import InstalledAppFlow
 from google.auth.transport.requests import Request
 from googleapiclient.discovery import build
@@ -23,8 +27,8 @@ def _dry(name: str, **kwargs):
     return {"dry_run": True, "tool": f"gtasks_{name}", "args": kwargs}
 
 SCOPES = ["https://www.googleapis.com/auth/tasks"]
-TOKEN_PATH = os.getenv("TOKEN_PATH", "gcp-oauth.keys.json")
-CREDENTIALS_PATH = os.getenv("CREDENTIALS_PATH", "credentials.json")
+TOKEN_PATH = os.getenv("GTASKS_TOKEN_PATH", "gcp-oauth.keys.json")
+CREDENTIALS_PATH = os.getenv("GTASKS_CREDENTIALS_PATH", "credentials.json")
 
 if not os.path.exists(CREDENTIALS_PATH):
     raise RuntimeError("Place credentials.json (OAuth client) in the repo root")
