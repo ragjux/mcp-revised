@@ -49,359 +49,178 @@ curl -sS "$BASE" \
 # curl -X POST "http://localhost:8080/mcp" \
 #   -H "Content-Type: application/json" \
 #   -H "Accept: application/json,text/event-stream" \
-#   -H "MCP-Protocol-Version: 2025-06-18" \
-#   -H "Mcp-Session-Id: YOUR_SESSION_ID_HERE" \
-#   -d '{
-#     "jsonrpc": "2.0",
-#     "id": 2,
-#     "method": "tools/call",
-#     "params": {
-#       "name": "hubspot_hubspot_create_company",
-#       "arguments": {
-#         "properties": {
-#           "name": "My Test Company",
-#           "domain": "mytestcompany.com",
-#           "industry": "INFORMATION_TECHNOLOGY_AND_SERVICES",
-#           "description": "Company created via curl"
-#         }
-#       }
-#     }
-#   }'
+#   -H "MCP-Protocol-Version: $PROTO" \
+#   -H "Mcp-Session-Id: $SESSION" \
+#   -d '{"jsonrpc":"2.0","id":11,"method":"tools/call","params":{"name":"google_slides_mcp_gs_get_presentation","arguments":{"presentationId":"1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms"}}}' \
+# | awk '/^data:/{sub(/^data:[ ]*/,"");print}' | jq .
 
-# # Get Active Companies
-
-  # curl -X POST "http://localhost:8080/mcp" \
-  # -H "Content-Type: application/json" \
-  # -H "Accept: application/json,text/event-stream" \
-  # -H "MCP-Protocol-Version: 2025-06-18" \
-  # -H "Mcp-Session-Id: YOUR_SESSION_ID_HERE" \
-  # -d '{
-  #   "jsonrpc": "2.0",
-  #   "id": 3,
-  #   "method": "tools/call",
-  #   "params": {
-  #     "name": "hubspot_hubspot_get_active_companies",
-  #     "arguments": {
-  #       "limit": 10
-  #     }
-  #   }
-  # }'
-
-# # Search Companies
-
-
-#   curl -X POST "http://localhost:8080/mcp" \
+# # Test 3: Batch update presentation
+# echo "Testing slides_gs_batch_update_presentation..."
+# curl -sS "$BASE" \
 #   -H "Content-Type: application/json" \
 #   -H "Accept: application/json,text/event-stream" \
-#   -H "MCP-Protocol-Version: 2025-06-18" \
-#   -H "Mcp-Session-Id: YOUR_SESSION_ID_HERE" \
-#   -d '{
-#     "jsonrpc": "2.0",
-#     "id": 4,
-#     "method": "tools/call",
-#     "params": {
-#       "name": "hubspot_hubspot_search_companies",
-#       "arguments": {
-#         "query": "test",
-#         "limit": 5
-#       }
-#     }
-#   }'
+#   -H "MCP-Protocol-Version: $PROTO" \
+#   -H "Mcp-Session-Id: $SESSION" \
+#   -d '{"jsonrpc":"2.0","id":12,"method":"tools/call","params":{"name":"google_slides_mcp_gs_batch_update_presentation","arguments":{"presentationId":"1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms","requests":[{"createSlide":{"slideLayoutReference":{"predefinedLayout":"TITLE_AND_BODY"}}}]}}}' \
+# | awk '/^data:/{sub(/^data:[ ]*/,"");print}' | jq .
 
-# # Get Company Details
-
-#   curl -X POST "http://localhost:8080/mcp" \
+# # Test 4: Get page
+# echo "Testing slides_gs_get_page..."
+# curl -sS "$BASE" \
 #   -H "Content-Type: application/json" \
 #   -H "Accept: application/json,text/event-stream" \
-#   -H "MCP-Protocol-Version: 2025-06-18" \
-#   -H "Mcp-Session-Id: YOUR_SESSION_ID_HERE" \
-#   -d '{
-#     "jsonrpc": "2.0",
-#     "id": 5,
-#     "method": "tools/call",
-#     "params": {
-#       "name": "hubspot_hubspot_get_company_details",
-#       "arguments": {
-#         "company_id": "149629634269"
-#       }
-#     }
-#   }'
+#   -H "MCP-Protocol-Version: $PROTO" \
+#   -H "Mcp-Session-Id: $SESSION" \
+#   -d '{"jsonrpc":"2.0","id":13,"method":"tools/call","params":{"name":"google_slides_mcp_gs_get_page","arguments":{"presentationId":"1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms","pageObjectId":"slide1"}}}' \
+# | awk '/^data:/{sub(/^data:[ ]*/,"");print}' | jq .
 
-# # Get Company Contacts
-
-#   curl -X POST "http://localhost:8080/mcp" \
+# # Test 5: Summarize presentation
+# echo "Testing slides_gs_summarize_presentation..."
+# curl -sS "$BASE" \
 #   -H "Content-Type: application/json" \
 #   -H "Accept: application/json,text/event-stream" \
-#   -H "MCP-Protocol-Version: 2025-06-18" \
-#   -H "Mcp-Session-Id: YOUR_SESSION_ID_HERE" \
-#   -d '{
-#     "jsonrpc": "2.0",
-#     "id": 6,
-#     "method": "tools/call",
-#     "params": {
-#       "name": "hubspot_hubspot_get_company_contacts",
-#       "arguments": {
-#         "company_id": "149629634269",
-#         "limit": 10
-#       }
-#     }
-#   }'
-
-# # Get Company Deals
+#   -H "MCP-Protocol-Version: $PROTO" \
+#   -H "Mcp-Session-Id: $SESSION" \
+#   -d '{"jsonrpc":"2.0","id":14,"method":"tools/call","params":{"name":"google_slides_mcp_gs_summarize_presentation","arguments":{"presentationId":"1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms","include_notes":false}}}' \
+# | awk '/^data:/{sub(/^data:[ ]*/,"");print}' | jq .
 
 
-#   curl -X POST "http://localhost:8080/mcp" \
+# # Test WhatsApp tools
+# # Test 1: Send text message
+# echo "Testing whatsapp_wa_send_text..."
+# curl -sS "$BASE" \
 #   -H "Content-Type: application/json" \
 #   -H "Accept: application/json,text/event-stream" \
-#   -H "MCP-Protocol-Version: 2025-06-18" \
-#   -H "Mcp-Session-Id: YOUR_SESSION_ID_HERE" \
-#   -d '{
-#     "jsonrpc": "2.0",
-#     "id": 7,
-#     "method": "tools/call",
-#     "params": {
-#       "name": "hubspot_hubspot_get_company_deals",
-#       "arguments": {
-#         "company_id": "149629634269",
-#         "limit": 10
-#       }
-#     }
-#   }'
+#   -H "MCP-Protocol-Version: $PROTO" \
+#   -H "Mcp-Session-Id: $SESSION" \
+#   -d '{"jsonrpc":"2.0","id":15,"method":"tools/call","params":{"name":"whatsapp_wa_send_text","arguments":{"to":"919910792473","text":"Hello JI!!","preview_url":false}}}' \
+# | awk '/^data:/{sub(/^data:[ ]*/,"");print}' | jq .
 
-# # Create Contact
-
-#   curl -X POST "http://localhost:8080/mcp" \
+# # Test 2: Send template message
+# echo "Testing whatsapp_wa_send_template..."
+# curl -sS "$BASE" \
 #   -H "Content-Type: application/json" \
 #   -H "Accept: application/json,text/event-stream" \
-#   -H "MCP-Protocol-Version: 2025-06-18" \
-#   -H "Mcp-Session-Id: YOUR_SESSION_ID_HERE" \
-#   -d '{
-#     "jsonrpc": "2.0",
-#     "id": 8,
-#     "method": "tools/call",
-#     "params": {
-#       "name": "hubspot_hubspot_create_contact",
-#       "arguments": {
-#         "properties": {
-#           "email": "test@example.com",
-#           "firstname": "John",
-#           "lastname": "Doe",
-#           "phone": "+1-555-123-4567"
-#         }
-#       }
-#     }
-#   }'
+#   -H "MCP-Protocol-Version: $PROTO" \
+#   -H "Mcp-Session-Id: $SESSION" \
+#   -d '{"jsonrpc":"2.0","id":16,"method":"tools/call","params":{"name":"whatsapp_wa_send_template","arguments":{"to":"919910792473","template_name":"hello_world","language":"en_US"}}}' \
+# | awk '/^data:/{sub(/^data:[ ]*/,"");print}' | jq .
 
-# # Get Active Contacts
-
-#   curl -X POST "http://localhost:8080/mcp" \
+# # Test 3: Send image URL
+# echo "Testing whatsapp_wa_send_image_url..."
+# curl -sS "$BASE" \
 #   -H "Content-Type: application/json" \
 #   -H "Accept: application/json,text/event-stream" \
-#   -H "MCP-Protocol-Version: 2025-06-18" \
-#   -H "Mcp-Session-Id: YOUR_SESSION_ID_HERE" \
-#   -d '{
-#     "jsonrpc": "2.0",
-#     "id": 9,
-#     "method": "tools/call",
-#     "params": {
-#       "name": "hubspot_hubspot_get_active_contacts",
-#       "arguments": {
-#         "limit": 10
-#       }
-#     }
-#   }'
+#   -H "MCP-Protocol-Version: $PROTO" \
+#   -H "Mcp-Session-Id: $SESSION" \
+#   -d '{"jsonrpc":"2.0","id":17,"method":"tools/call","params":{"name":"whatsapp_wa_send_image_url","arguments":{"to":"919910792473","image_url":"https://example.com/image.jpg","caption":"Check out this image!"}}}' \
+# | awk '/^data:/{sub(/^data:[ ]*/,"");print}' | jq .
 
-# # Search Contacts
-
-#   curl -X POST "http://localhost:8080/mcp" \
+# # Test 4: Send document URL
+# echo "Testing whatsapp_wa_send_document_url..."
+# curl -sS "$BASE" \
 #   -H "Content-Type: application/json" \
 #   -H "Accept: application/json,text/event-stream" \
-#   -H "MCP-Protocol-Version: 2025-06-18" \
-#   -H "Mcp-Session-Id: YOUR_SESSION_ID_HERE" \
-#   -d '{
-#     "jsonrpc": "2.0",
-#     "id": 10,
-#     "method": "tools/call",
-#     "params": {
-#       "name": "hubspot_hubspot_search_contacts",
-#       "arguments": {
-#         "query": "john",
-#         "limit": 5
-#       }
-#     }
-#   }'
+#   -H "MCP-Protocol-Version: $PROTO" \
+#   -H "Mcp-Session-Id: $SESSION" \
+#   -d '{"jsonrpc":"2.0","id":18,"method":"tools/call","params":{"name":"whatsapp_wa_send_document_url","arguments":{"to":"919910792473","doc_url":"https://example.com/document.pdf","filename":"document.pdf"}}}' \
+# | awk '/^data:/{sub(/^data:[ ]*/,"");print}' | jq .
 
-# # Get Contact Details
-
-#   curl -X POST "http://localhost:8080/mcp" \
+# # Test 5: Send buttons
+# echo "Testing whatsapp_wa_send_buttons..."
+# curl -sS "$BASE" \
 #   -H "Content-Type: application/json" \
 #   -H "Accept: application/json,text/event-stream" \
-#   -H "MCP-Protocol-Version: 2025-06-18" \
-#   -H "Mcp-Session-Id: YOUR_SESSION_ID_HERE" \
-#   -d '{
-#     "jsonrpc": "2.0",
-#     "id": 11,
-#     "method": "tools/call",
-#     "params": {
-#       "name": "hubspot_hubspot_get_contact_details",
-#       "arguments": {
-#         "contact_id": "231948434116"
-#       }
-#     }
-#   }'
+#   -H "MCP-Protocol-Version: $PROTO" \
+#   -H "Mcp-Session-Id: $SESSION" \
+#   -d '{"jsonrpc":"2.0","id":19,"method":"tools/call","params":{"name":"whatsapp_wa_send_buttons","arguments":{"to":"919910792473","header_text":"Choose an option","body_text":"Please select one of the following options:","buttons":[{"id":"btn1","title":"Yes"},{"id":"btn2","title":"No"}]}}}' \
+# | awk '/^data:/{sub(/^data:[ ]*/,"");print}' | jq .
 
-# # GMAIL----------------------------------------
-
-# # Send Email
-
-#   curl -X POST "http://localhost:8080/mcp" \
+# # Test 6: Mark message as read
+# echo "Testing whatsapp_wa_mark_read..."
+# curl -sS "$BASE" \
 #   -H "Content-Type: application/json" \
 #   -H "Accept: application/json,text/event-stream" \
-#   -H "MCP-Protocol-Version: 2025-06-18" \
-#   -H "Mcp-Session-Id: YOUR_SESSION_ID_HERE" \
-#   -d '{
-#     "jsonrpc": "2.0",
-#     "id": 2,
-#     "method": "tools/call",
-#     "params": {
-#       "name": "gmail_gmail_send_email",
-#       "arguments": {
-#         "recipient": "recipient@example.com",
-#         "subject": "Test Email from MCP",
-#         "body": "This is a test email sent via MCP Gateway."
-#       }
-#     }
-#   }'
+#   -H "MCP-Protocol-Version: $PROTO" \
+#   -H "Mcp-Session-Id: $SESSION" \
+#   -d '{"jsonrpc":"2.0","id":20,"method":"tools/call","params":{"name":"whatsapp_wa_mark_read","arguments":{"message_id":"wamid.1234567890abcdef"}}}' \
+# | awk '/^data:/{sub(/^data:[ ]*/,"");print}' | jq .
 
-# # Send Email with Attachment
-
-#   curl -X POST "http://localhost:8080/mcp" \
+# # Test 7: Upload media
+# echo "Testing whatsapp_wa_upload_media..."
+# curl -sS "$BASE" \
 #   -H "Content-Type: application/json" \
 #   -H "Accept: application/json,text/event-stream" \
-#   -H "MCP-Protocol-Version: 2025-06-18" \
-#   -H "Mcp-Session-Id: YOUR_SESSION_ID_HERE" \
-#   -d '{
-#     "jsonrpc": "2.0",
-#     "id": 3,
-#     "method": "tools/call",
-#     "params": {
-#       "name": "gmail_gmail_send_email",
-#       "arguments": {
-#         "recipient": "recipient@example.com",
-#         "subject": "Email with Attachment",
-#         "body": "Please find the attached file.",
-#         "attachment_path": "/path/to/your/file.pdf"
-#       }
-#     }
-#   }'
+#   -H "MCP-Protocol-Version: $PROTO" \
+#   -H "Mcp-Session-Id: $SESSION" \
+#   -d '{"jsonrpc":"2.0","id":21,"method":"tools/call","params":{"name":"whatsapp_wa_upload_media","arguments":{"file_path":"/path/to/your/file.jpg","mime_type":"image/jpeg"}}}' \
+# | awk '/^data:/{sub(/^data:[ ]*/,"");print}' | jq .
 
-# # Send Email with URL Attachment
-#   curl -X POST "http://localhost:8080/mcp" \
+
+# # Test Google Forms tools
+# # Test 1: Create form
+# echo "Testing forms_gf_create_form..."
+# curl -sS "$BASE" \
 #   -H "Content-Type: application/json" \
 #   -H "Accept: application/json,text/event-stream" \
-#   -H "MCP-Protocol-Version: 2025-06-18" \
-#   -H "Mcp-Session-Id: YOUR_SESSION_ID_HERE" \
-#   -d '{
-#     "jsonrpc": "2.0",
-#     "id": 4,
-#     "method": "tools/call",
-#     "params": {
-#       "name": "gmail_gmail_send_email_with_url_attachment",
-#       "arguments": {
-#         "recipient": "recipient@example.com",
-#         "subject": "Email with URL Attachment",
-#         "body": "Please find the attached file downloaded from URL.",
-#         "attachment_url": "https://example.com/document.pdf",
-#         "attachment_filename": "document.pdf"
-#       }
-#     }
-#   }'
+#   -H "MCP-Protocol-Version: $PROTO" \
+#   -H "Mcp-Session-Id: $SESSION" \
+#   -d '{"jsonrpc":"2.0","id":22,"method":"tools/call","params":{"name":"google_forms_mcp_gf_create_form","arguments":{"title":"MCP Test Form","document_title":"MCP Test Form Document"}}}' \
+# | awk '/^data:/{sub(/^data:[ ]*/,"");print}' | jq .
 
-# # Send Email with Pre-staged Attachment
-
-#   curl -X POST "http://localhost:8080/mcp" \
+# # Test 2: Get form
+# echo "Testing forms_gf_get_form..."
+# curl -sS "$BASE" \
 #   -H "Content-Type: application/json" \
 #   -H "Accept: application/json,text/event-stream" \
-#   -H "MCP-Protocol-Version: 2025-06-18" \
-#   -H "Mcp-Session-Id: YOUR_SESSION_ID_HERE" \
-#   -d '{
-#     "jsonrpc": "2.0",
-#     "id": 5,
-#     "method": "tools/call",
-#     "params": {
-#       "name": "gmail_gmail_send_email_with_prestaged_attachment",
-#       "arguments": {
-#         "recipient": "recipient@example.com",
-#         "subject": "Email with Pre-staged Attachment",
-#         "body": "Please find the pre-staged attachment.",
-#         "attachment_name": "prestaged_file.pdf"
-#       }
-#     }
-#   }'
+#   -H "MCP-Protocol-Version: $PROTO" \
+#   -H "Mcp-Session-Id: $SESSION" \
+#   -d '{"jsonrpc":"2.0","id":23,"method":"tools/call","params":{"name":"google_forms_mcp_gf_get_form","arguments":{"form_id":"1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms"}}}' \
+# | awk '/^data:/{sub(/^data:[ ]*/,"");print}' | jq .
 
-# # Fetch Recent Emails
-
-#   curl -X POST "http://localhost:8080/mcp" \
+# # Test 3: Add question
+# echo "Testing forms_gf_add_question..."
+# curl -sS "$BASE" \
 #   -H "Content-Type: application/json" \
 #   -H "Accept: application/json,text/event-stream" \
-#   -H "MCP-Protocol-Version: 2025-06-18" \
-#   -H "Mcp-Session-Id: YOUR_SESSION_ID_HERE" \
-#   -d '{
-#     "jsonrpc": "2.0",
-#     "id": 6,
-#     "method": "tools/call",
-#     "params": {
-#       "name": "gmail_gmail_fetch_recent_emails",
-#       "arguments": {
-#         "folder": "INBOX",
-#         "limit": 10
-#       }
-#     }
-#   }'
+#   -H "MCP-Protocol-Version: $PROTO" \
+#   -H "Mcp-Session-Id: $SESSION" \
+#   -d '{"jsonrpc":"2.0","id":24,"method":"tools/call","params":{"name":"google_forms_mcp_gf_add_question","arguments":{"form_id":"1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms","title":"What is your name?","question_type":"TEXT","index":0}}}' \
+# | awk '/^data:/{sub(/^data:[ ]*/,"");print}' | jq .
 
-# # Fetch Recent Emails from Sent Folder
-
-#   curl -X POST "http://localhost:8080/mcp" \
+# # Test 4: Add multiple choice question
+# echo "Testing forms_gf_add_question (multiple choice)..."
+# curl -sS "$BASE" \
 #   -H "Content-Type: application/json" \
 #   -H "Accept: application/json,text/event-stream" \
-#   -H "MCP-Protocol-Version: 2025-06-18" \
-#   -H "Mcp-Session-Id: YOUR_SESSION_ID_HERE" \
-#   -d '{
-#     "jsonrpc": "2.0",
-#     "id": 7,
-#     "method": "tools/call",
-#     "params": {
-#       "name": "gmail_gmail_fetch_recent_emails",
-#       "arguments": {
-#         "folder": "SENT",
-#         "limit": 5
-#       }
-#     }
-#   }'
+#   -H "MCP-Protocol-Version: $PROTO" \
+#   -H "Mcp-Session-Id: $SESSION" \
+#   -d '{"jsonrpc":"2.0","id":25,"method":"tools/call","params":{"name":"google_forms_mcp_gf_add_question","arguments":{"form_id":"1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms","title":"Choose your favorite color","question_type":"RADIO","index":1,"options":["Red","Blue","Green","Yellow"]}}}' \
+# | awk '/^data:/{sub(/^data:[ ]*/,"");print}' | jq .
 
-# # Download Attachment From URL
-
-#   curl -X POST "http://localhost:8080/mcp" \
+# # Test 5: Delete question
+# echo "Testing forms_gf_delete_question..."
+# curl -sS "$BASE" \
 #   -H "Content-Type: application/json" \
 #   -H "Accept: application/json,text/event-stream" \
-#   -H "MCP-Protocol-Version: 2025-06-18" \
-#   -H "Mcp-Session-Id: YOUR_SESSION_ID_HERE" \
-#   -d '{
-#     "jsonrpc": "2.0",
-#     "id": 8,
-#     "method": "tools/call",
-#     "params": {
-#       "name": "gmail_gmail_download_attachment",
-#       "arguments": {
-#         "attachment_url": "https://example.com/document.pdf",
-#         "attachment_filename": "downloaded_document.pdf"
-#       }
-#     }
-#   }'
+#   -H "MCP-Protocol-Version: $PROTO" \
+#   -H "Mcp-Session-Id: $SESSION" \
+#   -d '{"jsonrpc":"2.0","id":26,"method":"tools/call","params":{"name":"google_forms_mcp_gf_delete_question","arguments":{"form_id":"1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms","location_index":0}}}' \
+# | awk '/^data:/{sub(/^data:[ ]*/,"");print}' | jq .
 
-# # Get Pre-staged Attachment
+# # Test 6: Get responses
+# echo "Testing forms_gf_get_responses..."
+# curl -sS "$BASE" \
+#   -H "Content-Type: application/json" \
+#   -H "Accept: application/json,text/event-stream" \
+#   -H "MCP-Protocol-Version: $PROTO" \
+#   -H "Mcp-Session-Id: $SESSION" \
+#   -d '{"jsonrpc":"2.0","id":27,"method":"tools/call","params":{"name":"google_forms_mcp_gf_get_responses","arguments":{"form_id":"1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms"}}}' \
+# | awk '/^data:/{sub(/^data:[ ]*/,"");print}' | jq .
 
-#   curl -X POST "http://localhost:8080/mcp" \
+# # Test 7: List forms via Drive API
+# echo "Testing forms_gf_drive_list_forms..."
+# curl -sS "$BASE" \
 #   -H "Content-Type: application/json" \
 #   -H "Accept: application/json,text/event-stream" \
 #   -H "MCP-Protocol-Version: 2025-06-18" \

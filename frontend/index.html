@@ -8,7 +8,37 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
 </head>
 <body>
-    <div class="chat-container">
+    <!-- Authentication Modal -->
+    <div class="auth-modal" id="authModal">
+        <div class="auth-content">
+            <div class="auth-header">
+                <i class="fas fa-lock"></i>
+                <h2>Authentication Required</h2>
+                <p>Please enter your agent token to connect to the MCP Assistant</p>
+            </div>
+            <div class="auth-form">
+                <div class="input-group">
+                    <label for="tokenInput">Agent Token:</label>
+                    <input 
+                        type="password" 
+                        id="tokenInput" 
+                        placeholder="Enter your agent token..."
+                        autocomplete="off"
+                    >
+                </div>
+                <button id="connectButton" class="connect-button">
+                    <i class="fas fa-plug"></i>
+                    Connect
+                </button>
+                <div class="auth-error" id="authError" style="display: none;">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <span id="authErrorMessage"></span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="chat-container" id="chatContainer" style="display: none;">
         <!-- Header -->
         <div class="chat-header">
             <div class="header-content">
@@ -16,9 +46,14 @@
                     <i class="fas fa-robot"></i>
                     <h1>MCP Assistant</h1>
                 </div>
-                <div class="connection-status" id="connectionStatus">
-                    <i class="fas fa-circle"></i>
-                    <span>Connecting...</span>
+                <div class="connection-info">
+                    <div class="connection-status" id="connectionStatus">
+                        <i class="fas fa-circle"></i>
+                        <span>Connecting...</span>
+                    </div>
+                    <button id="disconnectButton" class="disconnect-button" title="Disconnect">
+                        <i class="fas fa-sign-out-alt"></i>
+                    </button>
                 </div>
             </div>
         </div>
@@ -63,9 +98,14 @@
                     placeholder="Type your message here... (Shift+Enter for new line, Enter to send)"
                     rows="1"
                 ></textarea>
-                <button id="sendButton" class="send-button" disabled>
-                    <i class="fas fa-paper-plane"></i>
-                </button>
+                <div class="input-buttons">
+                    <button id="clearButton" class="clear-button" title="Clear chat">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                    <button id="sendButton" class="send-button" disabled>
+                        <i class="fas fa-paper-plane"></i>
+                    </button>
+                </div>
             </div>
             <div class="input-footer">
                 <div class="available-tools" id="availableTools">

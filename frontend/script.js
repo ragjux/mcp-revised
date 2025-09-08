@@ -5,16 +5,28 @@ class MCPChatInterface {
         this.reconnectAttempts = 0;
         this.maxReconnectAttempts = 5;
         this.reconnectDelay = 1000;
+        this.authToken = null;
         
         this.initializeElements();
         this.setupEventListeners();
-        this.connect();
+        this.showAuthModal();
     }
 
     initializeElements() {
+        // Auth modal elements
+        this.authModal = document.getElementById('authModal');
+        this.tokenInput = document.getElementById('tokenInput');
+        this.connectButton = document.getElementById('connectButton');
+        this.authError = document.getElementById('authError');
+        this.authErrorMessage = document.getElementById('authErrorMessage');
+        this.disconnectButton = document.getElementById('disconnectButton');
+        
+        // Chat elements
+        this.chatContainer = document.getElementById('chatContainer');
         this.chatMessages = document.getElementById('chatMessages');
         this.messageInput = document.getElementById('messageInput');
         this.sendButton = document.getElementById('sendButton');
+        this.clearButton = document.getElementById('clearButton');
         this.connectionStatus = document.getElementById('connectionStatus');
         this.toolStatus = document.getElementById('toolStatus');
         this.toolStatusText = document.getElementById('toolStatusText');
@@ -24,8 +36,23 @@ class MCPChatInterface {
     }
 
     setupEventListeners() {
+        // Auth modal events
+        this.connectButton.addEventListener('click', () => this.handleConnect());
+        this.disconnectButton.addEventListener('click', () => this.handleDisconnect());
+        
+        // Enter key in token input
+        this.tokenInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                this.handleConnect();
+            }
+        });
+
         // Send button click
         this.sendButton.addEventListener('click', () => this.sendMessage());
+        
+        // Clear button click
+        this.clearButton.addEventListener('click', () => this.clearChat());
         
         // Enter key to send (Shift+Enter for new line)
         this.messageInput.addEventListener('keydown', (e) => {
@@ -46,8 +73,13 @@ class MCPChatInterface {
     }
 
     connect() {
+        if (!this.authToken) {
+            this.showAuthError('No authentication token provided');
+            return;
+        }
+
         try {
-            this.ws = new WebSocket('ws://localhost:9090/ws');
+            this.ws = new WebSocket(`ws://localhost:9090/ws?token=${encodeURIComponent(this.authToken)}`);
             this.updateConnectionStatus('connecting', 'Connecting...');
             
             this.ws.onopen = () => {
@@ -55,6 +87,14 @@ class MCPChatInterface {
                 this.reconnectAttempts = 0;
                 this.updateConnectionStatus('connected', 'Connected');
                 this.hideLoadingOverlay();
+                this.hideAuthModal();
+                
+                // Clear connection timeout
+                if (this.connectionTimeout) {
+                    clearTimeout(this.connectionTimeout);
+                    this.connectionTimeout = null;
+                }
+                
                 console.log('Connected to MCP WebSocket');
             };
 
@@ -62,27 +102,61 @@ class MCPChatInterface {
                 this.handleMessage(JSON.parse(event.data));
             };
 
-            this.ws.onclose = () => {
+            this.ws.onclose = (event) => {
                 this.isConnected = false;
                 this.updateConnectionStatus('disconnected', 'Disconnected');
                 this.hideLoadingOverlay();
-                this.attemptReconnect();
+                
+                // Clear connection timeout
+                if (this.connectionTimeout) {
+                    clearTimeout(this.connectionTimeout);
+                    this.connectionTimeout = null;
+                }
+                
+                // Check if it's an authentication error
+                if (event.code === 1008) {
+                    this.showAuthError('Invalid agent token. Please check your token and try again.');
+                    this.connectButton.disabled = false;
+                    this.connectButton.innerHTML = '<i class="fas fa-plug"></i> Connect';
+                } else {
+                    // If connection was closed unexpectedly (not by user disconnect), reset to auth
+                    if (this.authToken && event.code !== 1000) {
+                        this.handleDisconnect();
+                    } else {
+                        this.attemptReconnect();
+                    }
+                }
             };
 
             this.ws.onerror = (error) => {
                 console.error('WebSocket error:', error);
                 this.updateConnectionStatus('disconnected', 'Connection Error');
+                this.hideLoadingOverlay();
+                
+                // Clear connection timeout
+                if (this.connectionTimeout) {
+                    clearTimeout(this.connectionTimeout);
+                    this.connectionTimeout = null;
+                }
             };
 
         } catch (error) {
             console.error('Failed to connect:', error);
             this.updateConnectionStatus('disconnected', 'Connection Failed');
+            this.hideLoadingOverlay();
+            
+            // Clear connection timeout
+            if (this.connectionTimeout) {
+                clearTimeout(this.connectionTimeout);
+                this.connectionTimeout = null;
+            }
+            
             this.attemptReconnect();
         }
     }
 
     attemptReconnect() {
-        if (this.reconnectAttempts < this.maxReconnectAttempts) {
+        if (this.reconnectAttempts < this.maxReconnectAttempts && this.authToken) {
             this.reconnectAttempts++;
             this.updateConnectionStatus('connecting', `Reconnecting... (${this.reconnectAttempts}/${this.maxReconnectAttempts})`);
             
@@ -91,7 +165,12 @@ class MCPChatInterface {
             }, this.reconnectDelay * this.reconnectAttempts);
         } else {
             this.updateConnectionStatus('disconnected', 'Connection Failed');
-            this.showErrorMessage('Unable to connect to the MCP server. Please check if ws_gateway.py is running.');
+            this.hideLoadingOverlay();
+            if (!this.authToken) {
+                this.showAuthError('Connection lost. Please reconnect with your token.');
+            } else {
+                this.showErrorMessage('Unable to connect to the MCP server. Please check if ws_gateway.py is running.');
+            }
         }
     }
 
@@ -106,7 +185,8 @@ class MCPChatInterface {
                 this.handleToolsMessage(data);
                 break;
             case 'user_message':
-                this.addUserMessage(data.text);
+                // User message is already displayed immediately when sent
+                // Server echo is ignored to prevent duplicates
                 break;
             case 'ai_message':
                 this.addBotMessage(data.text, data.latency_ms);
@@ -127,8 +207,18 @@ class MCPChatInterface {
     }
 
     handleStatusMessage(data) {
-        if (data.message === 'connecting_mcp') {
-            this.showToolStatus('Connecting to MCP services...');
+        switch (data.message) {
+            case 'connecting_mcp':
+                this.showToolStatus('Connecting to MCP services...');
+                break;
+            case 'initializing_mcp_session':
+                this.showToolStatus('Initializing MCP session...');
+                break;
+            case 'loading_tools':
+                this.showToolStatus('Loading available tools...');
+                break;
+            default:
+                this.showToolStatus(data.message);
         }
     }
 
@@ -152,12 +242,15 @@ class MCPChatInterface {
         const message = this.messageInput.value.trim();
         if (!message || !this.isConnected) return;
 
+        // Show user message immediately for better UX
+        this.addUserMessage(message);
+
         // Clear input immediately for better UX
         this.messageInput.value = '';
         this.autoResizeTextarea();
         this.updateSendButton();
 
-        // Send to server - user message will be displayed when server echoes it back
+        // Send to server
         try {
             this.ws.send(JSON.stringify({ message: message }));
         } catch (error) {
@@ -269,6 +362,112 @@ class MCPChatInterface {
     showErrorMessage(message) {
         this.addBotMessage(message, null, true);
     }
+
+    // Authentication methods
+    showAuthModal() {
+        this.authModal.style.display = 'flex';
+        this.chatContainer.style.display = 'none';
+        this.hideLoadingOverlay();
+        this.tokenInput.focus();
+    }
+
+    hideAuthModal() {
+        this.authModal.style.display = 'none';
+        this.chatContainer.style.display = 'flex';
+    }
+
+    showAuthError(message) {
+        this.authErrorMessage.textContent = message;
+        this.authError.style.display = 'flex';
+        
+        // Always reset button state
+        this.connectButton.disabled = false;
+        this.connectButton.innerHTML = '<i class="fas fa-plug"></i> Connect';
+        
+        // Hide loading overlay and reset connection status
+        this.hideLoadingOverlay();
+        this.updateConnectionStatus('disconnected', 'Authentication Failed');
+        
+        // Clear any existing auth token
+        this.authToken = null;
+    }
+
+    hideAuthError() {
+        this.authError.style.display = 'none';
+    }
+
+    handleConnect() {
+        const token = this.tokenInput.value.trim();
+        
+        if (!token) {
+            this.showAuthError('Please enter your agent token');
+            return;
+        }
+
+        this.hideAuthError();
+        this.connectButton.disabled = true;
+        this.connectButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Connecting...';
+
+        this.authToken = token;
+        
+        // Set a timeout to prevent button from getting stuck
+        this.connectionTimeout = setTimeout(() => {
+            if (!this.isConnected) {
+                this.showAuthError('Connection timeout. Please check your token and try again.');
+            }
+        }, 10000); // 10 second timeout
+        
+        this.connect();
+    }
+
+    handleDisconnect() {
+        // Close WebSocket connection
+        if (this.ws) {
+            this.ws.close();
+            this.ws = null;
+        }
+        
+        // Reset connection state
+        this.isConnected = false;
+        this.authToken = null;
+        
+        // Clear token input
+        this.tokenInput.value = '';
+        
+        // Clear chat messages
+        this.chatMessages.innerHTML = '';
+        
+        // Reset connection status
+        this.updateConnectionStatus('disconnected');
+        
+        // Hide tool status
+        this.hideToolStatus();
+        
+        // Reset tools count
+        this.toolsCount.textContent = 'Loading...';
+        
+        // Show authentication modal
+        this.showAuthModal();
+        
+        // Hide chat interface
+        this.chatContainer.style.display = 'none';
+    }
+
+    clearChat() {
+        // Clear all messages except the welcome message
+        const welcomeMessage = this.chatMessages.querySelector('.welcome-message');
+        this.chatMessages.innerHTML = '';
+        if (welcomeMessage) {
+            this.chatMessages.appendChild(welcomeMessage);
+        }
+        
+        // Hide any tool status
+        this.hideToolStatus();
+        
+        // Scroll to top
+        this.chatMessages.scrollTop = 0;
+    }
+
 }
 
 // Initialize the chat interface when the page loads
