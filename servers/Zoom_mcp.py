@@ -8,18 +8,28 @@ import base64
 import asyncio
 from typing import Any, Dict, Optional
 from fastmcp import FastMCP
+from dotenv import load_dotenv
 import httpx
 import logging
+
+# Load environment variables from .env file
+load_dotenv()
 
 logging.basicConfig(level=os.getenv("LOG_LEVEL", "INFO"))
 DRY_RUN = os.getenv("DRY_RUN", "0") == "1"
 
+def _dry(name: str, **kwargs):
+    logging.info("DRY_RUN: %s %s", name, kwargs)
+    return {"dry_run": True, "tool": f"zoom_{name}", "args": kwargs}
+
 ZOOM_API_KEY = os.getenv("ZOOM_API_KEY")
 ZOOM_API_SECRET = os.getenv("ZOOM_API_SECRET")
 ZOOM_ACCOUNT_ID = os.getenv("ZOOM_ACCOUNT_ID")
+ZOOM_ACCESS_TOKEN = os.getenv("ZOOM_ACCESS_TOKEN")  # Optional: for user-level OAuth
 
-if not ZOOM_API_KEY or not ZOOM_API_SECRET or not ZOOM_ACCOUNT_ID:
-    raise RuntimeError("Set ZOOM_API_KEY, ZOOM_API_SECRET, and ZOOM_ACCOUNT_ID environment variables")
+# Check if we have either account credentials or access token
+if not ZOOM_ACCESS_TOKEN and (not ZOOM_API_KEY or not ZOOM_API_SECRET or not ZOOM_ACCOUNT_ID):
+    raise RuntimeError("Set either ZOOM_ACCESS_TOKEN (for user OAuth) or ZOOM_API_KEY, ZOOM_API_SECRET, and ZOOM_ACCOUNT_ID (for account credentials)")
 
 TOKEN_URL = "https://zoom.us/oauth/token"
 API_BASE_URL = "https://api.zoom.us/v2"
@@ -33,25 +43,49 @@ class ZoomAuth:
 
     async def get_access_token(self) -> str:
         import time
+        
+        # If we have a static access token, use it
+        if ZOOM_ACCESS_TOKEN:
+            return ZOOM_ACCESS_TOKEN
+            
+        # Otherwise, use account credentials flow
         if self._access_token and time.time() < self._token_expires_at - 60:
             return self._access_token
+        
+        if not ZOOM_API_KEY or not ZOOM_API_SECRET or not ZOOM_ACCOUNT_ID:
+            raise RuntimeError("Account credentials not configured. Set ZOOM_API_KEY, ZOOM_API_SECRET, and ZOOM_ACCOUNT_ID")
+        
         auth_str = f"{ZOOM_API_KEY}:{ZOOM_API_SECRET}"
         encoded_auth = base64.b64encode(auth_str.encode()).decode()
         headers = {
-            "Authorization": f"Basic {encoded_auth}"
+            "Authorization": f"Basic {encoded_auth}",
+            "Content-Type": "application/x-www-form-urlencoded"
         }
-        params = {
+        # Use form data instead of query parameters
+        data = {
             "grant_type": "account_credentials",
             "account_id": ZOOM_ACCOUNT_ID
         }
-        async with httpx.AsyncClient(timeout=10) as client:
-            response = await client.post(TOKEN_URL, headers=headers, params=params)
-            response.raise_for_status()
-            data = response.json()
-            self._access_token = data.get("access_token")
-            expires_in = data.get("expires_in", 3600)
-            self._token_expires_at = time.time() + expires_in
-            return self._access_token
+        
+        try:
+            async with httpx.AsyncClient(timeout=10) as client:
+                response = await client.post(TOKEN_URL, headers=headers, data=data)
+                response.raise_for_status()
+                token_data = response.json()
+                self._access_token = token_data.get("access_token")
+                expires_in = token_data.get("expires_in", 3600)
+                self._token_expires_at = time.time() + expires_in
+                return self._access_token
+        except httpx.HTTPStatusError as e:
+            error_detail = "Unknown error"
+            try:
+                error_response = e.response.json()
+                error_detail = error_response.get("error_description", error_response.get("error", str(e)))
+            except:
+                error_detail = str(e)
+            raise RuntimeError(f"Failed to get Zoom access token: {error_detail}")
+        except Exception as e:
+            raise RuntimeError(f"Failed to get Zoom access token: {str(e)}")
 
 zoom_auth = ZoomAuth()
 

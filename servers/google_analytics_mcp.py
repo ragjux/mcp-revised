@@ -7,7 +7,11 @@ A Model Context Protocol (MCP) server for Google Analytics operations.
 import os
 from typing import Any, Dict, Optional
 from fastmcp import FastMCP
+from dotenv import load_dotenv
 from google.oauth2.credentials import Credentials
+
+# Load environment variables from .env file
+load_dotenv()
 from google_auth_oauthlib.flow import InstalledAppFlow
 from google.auth.transport.requests import Request
 from googleapiclient.discovery import build
