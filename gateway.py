@@ -15,33 +15,6 @@ log = logging.getLogger("mcp-gateway")
 log.setLevel(logging.INFO)
 
 BASE_DIR = pathlib.Path(__file__).resolve().parent
-WA_SERVER = str(BASE_DIR / "servers" / "meta_whatsapp_mcp.py")
-GS_SERVER = str(BASE_DIR / "servers" / "google_sheets_mcp.py")
-<<<<<<<<< Temporary merge branch 1
-GSLIDES_SERVER = str(BASE_DIR / "servers" / "google_slide_mcp.py")
-GFORMS_SERVER = str(BASE_DIR / "servers" / "google_form_mcp.py")
-=========
-GMAIL_SERVER = str(BASE_DIR / "servers" / "gmail_mcp.py")
-CHAT_SERVER = str(BASE_DIR / "servers" / "google_chat_mcp.py")
-DRIVE_SERVER = str(BASE_DIR / "servers" / "google_drive_mcp.py")
-DOCS_SERVER = str(BASE_DIR / "servers" / "google_docs_mcp.py")
-CALENDAR_SERVER = str(BASE_DIR / "servers" / "calender_mcp.py")
-HUBSPOT_SERVER = str(BASE_DIR / "servers" / "hubspot_mcp.py")
-SLACK_SERVER = str(BASE_DIR / "servers" / "slack_mcp.py")
-AIRTABLE_SERVER = str(BASE_DIR / "servers" / "Airtable_mcp.py")
-NOTION_SERVER = str(BASE_DIR / "servers" / "Notion_mcp.py")
-WORDPRESS_SERVER = str(BASE_DIR / "servers" / "Wordpress_mcp.py")
-CALENDLY_SERVER = str(BASE_DIR / "servers" / "calendly_mcp.py")
-ASANA_SERVER = str(BASE_DIR / "servers" / "Asana_mcp.py")
-FRESHDESK_SERVER = str(BASE_DIR / "servers" / "Freshdesk_mcp.py")
-SALESFORCE_SERVER = str(BASE_DIR / "servers" / "Salesforce_mcp.py")
-HYGEN_SERVER = str(BASE_DIR / "servers" / "Hygen_mcp.py")
-SENDGRID_SERVER = str(BASE_DIR / "servers" / "Sendgrid_mcp.py")
-ZOOM_SERVER = str(BASE_DIR / "servers" / "Zoom_mcp.py")
-GOOGLE_ADS_SERVER = str(BASE_DIR / "servers" / "google_ads_mcp.py")
-GOOGLE_ANALYTICS_SERVER = str(BASE_DIR / "servers" / "google_analytics_mcp.py")
-GOOGLE_TASK_SERVER = str(BASE_DIR / "servers" / "google_task_mcp.py")
->>>>>>>>> Temporary merge branch 2
 PY = sys.executable  # launch sub-servers with the same venv interpreter
 
 # Server file paths
@@ -122,54 +95,25 @@ def get_server_config(server_name: str) -> dict:
     # Define environment variables for each server
     server_envs = {
         "whatsapp": {
-            "command": PY,
-            "args": [WA_SERVER],
-            "transport": "stdio",
-            "env": {
-<<<<<<<<< Temporary merge branch 1
-                "DRY_RUN": "0", "LOG_LEVEL": "INFO",
-=========
-                "DRY_RUN": os.environ.get("DRY_RUN", "0"), "LOG_LEVEL": "INFO",
->>>>>>>>> Temporary merge branch 2
-                "META_WA_ACCESS_TOKEN": os.environ.get("META_WA_ACCESS_TOKEN", ""),
-                "META_WA_PHONE_NUMBER_ID": os.environ.get("META_WA_PHONE_NUMBER_ID", ""),
-                "META_WA_API_VERSION": os.environ.get("META_WA_API_VERSION", "v21.0"),
-            },
+            "DRY_RUN": os.environ.get("DRY_RUN", "0"), "LOG_LEVEL": "INFO",
+            "META_WA_ACCESS_TOKEN": os.environ.get("META_WA_ACCESS_TOKEN", ""),
+            "META_WA_PHONE_NUMBER_ID": os.environ.get("META_WA_PHONE_NUMBER_ID", ""),
+            "META_WA_API_VERSION": os.environ.get("META_WA_API_VERSION", "v21.0"),
         },
-        "google_sheets_mcp": {
-            "command": PY,
-            "args": [GS_SERVER],
-            "transport": "stdio",
-            "env": {
-<<<<<<<<< Temporary merge branch 1
-                "DRY_RUN": "0", "LOG_LEVEL": "INFO",
-                "GSHEETS_ACCESS_TOKEN": os.environ.get("GSHEETS_ACCESS_TOKEN", ""),
-                "GSHEETS_REFRESH_TOKEN": os.environ.get("GSHEETS_REFRESH_TOKEN", ""),
-            },
+        "sheets": {
+            "DRY_RUN": os.environ.get("DRY_RUN", "0"), "LOG_LEVEL": "INFO",
+            "GOOGLE_SHEETS_ACCESS_TOKEN": os.environ.get("GSHEETS_ACCESS_TOKEN", ""),
+            "GOOGLE_SHEETS_REFRESH_TOKEN": os.environ.get("GSHEETS_REFRESH_TOKEN", ""),
         },
         "google_slides_mcp": {
-            "command": PY,
-            "args": [GSLIDES_SERVER],
-            "transport": "stdio",
-            "env": {
-                "DRY_RUN": "0", "LOG_LEVEL": "INFO",
-                "GSLIDES_ACCESS_TOKEN": os.environ.get("GSLIDES_ACCESS_TOKEN", ""),
-                "GSLIDES_REFRESH_TOKEN": os.environ.get("GSLIDES_REFRESH_TOKEN", ""),
-            },
+            "DRY_RUN": os.environ.get("DRY_RUN", "0"), "LOG_LEVEL": "INFO",
+            "GSLIDES_ACCESS_TOKEN": os.environ.get("GSLIDES_ACCESS_TOKEN", ""),
+            "GSLIDES_REFRESH_TOKEN": os.environ.get("GSLIDES_REFRESH_TOKEN", ""),
         },
         "google_forms_mcp": {
-            "command": PY,
-            "args": [GFORMS_SERVER],
-            "transport": "stdio",
-            "env": {
-                "DRY_RUN": "0", "LOG_LEVEL": "INFO",
-                "GFORMS_ACCESS_TOKEN": os.environ.get("GFORMS_ACCESS_TOKEN", ""),
-                "GFORMS_REFRESH_TOKEN": os.environ.get("GFORMS_REFRESH_TOKEN", ""),
-=========
-                "DRY_RUN": os.environ.get("DRY_RUN", "0"), "LOG_LEVEL": "INFO",
-                "GOOGLE_SHEETS_ACCESS_TOKEN": os.environ.get("GOOGLE_SHEETS_ACCESS_TOKEN", ""),
-                "GOOGLE_SHEETS_REFRESH_TOKEN": os.environ.get("GOOGLE_SHEETS_REFRESH_TOKEN", ""),
-            },
+            "DRY_RUN": os.environ.get("DRY_RUN", "0"), "LOG_LEVEL": "INFO",
+            "GFORMS_ACCESS_TOKEN": os.environ.get("GFORMS_ACCESS_TOKEN", ""),
+            "GFORMS_REFRESH_TOKEN": os.environ.get("GFORMS_REFRESH_TOKEN", ""),
         },
         "gmail": {
             "DRY_RUN": os.environ.get("DRY_RUN", "0"), "LOG_LEVEL": "INFO",
@@ -180,34 +124,19 @@ def get_server_config(server_name: str) -> dict:
             "SMTP_PASSWORD": os.environ.get("SMTP_PASSWORD", ""),
         },
         "chat": {
-            "command": PY,
-            "args": [CHAT_SERVER],
-            "transport": "stdio",
-            "env": {
-                "DRY_RUN": os.environ.get("DRY_RUN", "0"), "LOG_LEVEL": "INFO",
-                "GOOGLE_CHAT_ACCESS_TOKEN": os.environ.get("GOOGLE_CHAT_ACCESS_TOKEN", ""),
-                "GOOGLE_CHAT_REFRESH_TOKEN": os.environ.get("GOOGLE_CHAT_REFRESH_TOKEN", ""),
-            },
+            "DRY_RUN": os.environ.get("DRY_RUN", "0"), "LOG_LEVEL": "INFO",
+            "GOOGLE_CHAT_ACCESS_TOKEN": os.environ.get("GOOGLE_CHAT_ACCESS_TOKEN", ""),
+            "GOOGLE_CHAT_REFRESH_TOKEN": os.environ.get("GOOGLE_CHAT_REFRESH_TOKEN", ""),
         },
         "drive": {
-            "command": PY,
-            "args": [DRIVE_SERVER],
-            "transport": "stdio",
-            "env": {
-                "DRY_RUN": os.environ.get("DRY_RUN", "0"), "LOG_LEVEL": "INFO",
-                "GOOGLE_DRIVE_ACCESS_TOKEN": os.environ.get("GOOGLE_DRIVE_ACCESS_TOKEN", ""),
-                "GOOGLE_DRIVE_REFRESH_TOKEN": os.environ.get("GOOGLE_DRIVE_REFRESH_TOKEN", ""),
-            },
+            "DRY_RUN": os.environ.get("DRY_RUN", "0"), "LOG_LEVEL": "INFO",
+            "GOOGLE_DRIVE_ACCESS_TOKEN": os.environ.get("GOOGLE_DRIVE_ACCESS_TOKEN", ""),
+            "GOOGLE_DRIVE_REFRESH_TOKEN": os.environ.get("GOOGLE_DRIVE_REFRESH_TOKEN", ""),
         },
         "docs": {
-            "command": PY,
-            "args": [DOCS_SERVER],
-            "transport": "stdio",
-            "env": {
-                "DRY_RUN": os.environ.get("DRY_RUN", "0"), "LOG_LEVEL": "INFO",
-                "GOOGLE_DOCS_ACCESS_TOKEN": os.environ.get("GOOGLE_DOCS_ACCESS_TOKEN", ""),
-                "GOOGLE_DOCS_REFRESH_TOKEN": os.environ.get("GOOGLE_DOCS_REFRESH_TOKEN", ""),
-            },
+            "DRY_RUN": os.environ.get("DRY_RUN", "0"), "LOG_LEVEL": "INFO",
+            "GOOGLE_DOCS_ACCESS_TOKEN": os.environ.get("GOOGLE_DOCS_ACCESS_TOKEN", ""),
+            "GOOGLE_DOCS_REFRESH_TOKEN": os.environ.get("GOOGLE_DOCS_REFRESH_TOKEN", ""),
         },
         "calendar": {
             "DRY_RUN": os.environ.get("DRY_RUN", "0"), "LOG_LEVEL": "INFO",
@@ -237,19 +166,14 @@ def get_server_config(server_name: str) -> dict:
             "WP_APP_PASSWORD": os.environ.get("WP_APP_PASSWORD", ""),
         },
         "calendly": {
-            "command": PY,
-            "args": [CALENDLY_SERVER],
-            "transport": "stdio",
-            "env": {
-                "DRY_RUN": os.environ.get("DRY_RUN", "0"), "LOG_LEVEL": "INFO",
-                "CALENDLY_API_KEY": os.environ.get("CALENDLY_API_KEY", ""),
-                "CALENDLY_ACCESS_TOKEN": os.environ.get("CALENDLY_ACCESS_TOKEN", ""),
-                "CALENDLY_CLIENT_ID": os.environ.get("CALENDLY_CLIENT_ID", ""),
-                "CALENDLY_CLIENT_SECRET": os.environ.get("CALENDLY_CLIENT_SECRET", ""),
-                "CALENDLY_REFRESH_TOKEN": os.environ.get("CALENDLY_REFRESH_TOKEN", ""),
-                "CALENDLY_USER_URI": os.environ.get("CALENDLY_USER_URI", ""),
-                "CALENDLY_ORGANIZATION_URI": os.environ.get("CALENDLY_ORGANIZATION_URI", ""),
-            },
+            "DRY_RUN": os.environ.get("DRY_RUN", "0"), "LOG_LEVEL": "INFO",
+            "CALENDLY_API_KEY": os.environ.get("CALENDLY_API_KEY", ""),
+            "CALENDLY_ACCESS_TOKEN": os.environ.get("CALENDLY_ACCESS_TOKEN", ""),
+            "CALENDLY_CLIENT_ID": os.environ.get("CALENDLY_CLIENT_ID", ""),
+            "CALENDLY_CLIENT_SECRET": os.environ.get("CALENDLY_CLIENT_SECRET", ""),
+            "CALENDLY_REFRESH_TOKEN": os.environ.get("CALENDLY_REFRESH_TOKEN", ""),
+            "CALENDLY_USER_URI": os.environ.get("CALENDLY_USER_URI", ""),
+            "CALENDLY_ORGANIZATION_URI": os.environ.get("CALENDLY_ORGANIZATION_URI", ""),
         },
         "asana": {
             "DRY_RUN": os.environ.get("DRY_RUN", "0"), "LOG_LEVEL": "INFO",
@@ -281,38 +205,23 @@ def get_server_config(server_name: str) -> dict:
             "FROM_EMAIL": os.environ.get("FROM_EMAIL", ""),
         },
         "zoom": {
-            "command": PY,
-            "args": [ZOOM_SERVER],
-            "transport": "stdio",
-            "env": {
-                "DRY_RUN": os.environ.get("DRY_RUN", "0"), "LOG_LEVEL": "INFO",
-                "ZOOM_API_KEY": os.environ.get("ZOOM_API_KEY", ""),
-                "ZOOM_API_SECRET": os.environ.get("ZOOM_API_SECRET", ""),
-                "ZOOM_ACCOUNT_ID": os.environ.get("ZOOM_ACCOUNT_ID", ""),
-            },
+            "DRY_RUN": os.environ.get("DRY_RUN", "0"), "LOG_LEVEL": "INFO",
+            "ZOOM_API_KEY": os.environ.get("ZOOM_API_KEY", ""),
+            "ZOOM_API_SECRET": os.environ.get("ZOOM_API_SECRET", ""),
+            "ZOOM_ACCOUNT_ID": os.environ.get("ZOOM_ACCOUNT_ID", ""),
         },
         "google_ads": {
-            "command": PY,
-            "args": [GOOGLE_ADS_SERVER],
-            "transport": "stdio",
-            "env": {
-                "DRY_RUN": os.environ.get("DRY_RUN", "0"), "LOG_LEVEL": "INFO",
-                "GOOGLE_ADS_TOKEN_PATH": os.environ.get("GOOGLE_ADS_TOKEN_PATH", "token.json"),
-                "GOOGLE_ADS_CREDENTIALS_PATH": os.environ.get("GOOGLE_ADS_CREDENTIALS_PATH", "credentials.json"),
-                "GOOGLE_ADS_AUTH_TYPE": os.environ.get("GOOGLE_ADS_AUTH_TYPE", "service_account"),
-                "GOOGLE_ADS_DEVELOPER_TOKEN": os.environ.get("GOOGLE_ADS_DEVELOPER_TOKEN", ""),
-                "GOOGLE_ADS_LOGIN_CUSTOMER_ID": os.environ.get("GOOGLE_ADS_LOGIN_CUSTOMER_ID", ""),
-            },
+            "DRY_RUN": os.environ.get("DRY_RUN", "0"), "LOG_LEVEL": "INFO",
+            "GOOGLE_ADS_TOKEN_PATH": os.environ.get("GOOGLE_ADS_TOKEN_PATH", "token.json"),
+            "GOOGLE_ADS_CREDENTIALS_PATH": os.environ.get("GOOGLE_ADS_CREDENTIALS_PATH", "credentials.json"),
+            "GOOGLE_ADS_AUTH_TYPE": os.environ.get("GOOGLE_ADS_AUTH_TYPE", "service_account"),
+            "GOOGLE_ADS_DEVELOPER_TOKEN": os.environ.get("GOOGLE_ADS_DEVELOPER_TOKEN", ""),
+            "GOOGLE_ADS_LOGIN_CUSTOMER_ID": os.environ.get("GOOGLE_ADS_LOGIN_CUSTOMER_ID", ""),
         },
         "google_analytics": {
-            "command": PY,
-            "args": [GOOGLE_ANALYTICS_SERVER],
-            "transport": "stdio",
-            "env": {
-                "DRY_RUN": os.environ.get("DRY_RUN", "0"), "LOG_LEVEL": "INFO",
-                "TOKEN_PATH": os.environ.get("TOKEN_PATH", "token.json"),
-                "CREDENTIALS_PATH": os.environ.get("CREDENTIALS_PATH", "credentials.json"),
-            },
+            "DRY_RUN": os.environ.get("DRY_RUN", "0"), "LOG_LEVEL": "INFO",
+            "TOKEN_PATH": os.environ.get("TOKEN_PATH", "token.json"),
+            "CREDENTIALS_PATH": os.environ.get("CREDENTIALS_PATH", "credentials.json"),
         },
         "google_task": {
             "DRY_RUN": os.environ.get("DRY_RUN", "0"), "LOG_LEVEL": "INFO",
@@ -515,7 +424,7 @@ def build_mcp_config():
         "chat": ["GOOGLE_CHAT_ACCESS_TOKEN", "GOOGLE_CHAT_REFRESH_TOKEN"],
         "drive": ["GOOGLE_DRIVE_ACCESS_TOKEN", "GOOGLE_DRIVE_REFRESH_TOKEN"],
         "docs": ["GOOGLE_DOCS_ACCESS_TOKEN", "GOOGLE_DOCS_REFRESH_TOKEN"],
-        "calendar": ["GOOGLE_CALENDAR_ACCESS_TOKEN", "GOOGLE_CALENDAR_REFRESH_TOKEN"],
+        "calendar": ["GCALENDAR_ACCESS_TOKEN", "GCALENDAR_REFRESH_TOKEN"],
         "hubspot": ["HUBSPOT_ACCESS_TOKEN"],
         "slack": ["SLACK_BOT_TOKEN"],
         "airtable": ["AIRTABLE_API_KEY"],
