@@ -23,11 +23,11 @@ def _dry(name: str, **kwargs):
     return {"dry_run": True, "tool": f"calendar_{name}", "args": kwargs}
 
 # Environment variables for token-only authentication
-ACCESS_TOKEN = os.getenv("GOOGLE_CALENDAR_ACCESS_TOKEN", "")
-REFRESH_TOKEN = os.getenv("GOOGLE_CALENDAR_REFRESH_TOKEN", "")
+ACCESS_TOKEN = os.getenv("GCALENDAR_ACCESS_TOKEN", "")
+REFRESH_TOKEN = os.getenv("GCALENDAR_REFRESH_TOKEN", "")
 
 if not ACCESS_TOKEN or not REFRESH_TOKEN:
-    raise RuntimeError("Set GOOGLE_CALENDAR_ACCESS_TOKEN and GOOGLE_CALENDAR_REFRESH_TOKEN environment variables")
+    raise RuntimeError("Set GCALENDAR_ACCESS_TOKEN and GCALENDAR_REFRESH_TOKEN environment variables")
 
 CALENDAR_BASE = "https://www.googleapis.com/calendar/v3"
 
