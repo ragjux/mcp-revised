@@ -10,7 +10,11 @@ from langfuse.openai import OpenAI
 
 from dotenv import load_dotenv
 
+# Import HTTP upload service
+from utils import execute_http_upload_flag
+
 load_dotenv()
+print(os.getenv("OPENAI_API_KEY"))
 
 # -------------------------
 # Config (env-driven)
@@ -330,6 +334,7 @@ async def run_llm_tool_loop(user_text, tools, call_tool, model):
 # -------------------------
 class InMsg(BaseModel):
     message: str
+    metadata: Optional[Dict[str, Any]] = None
 
 @app.get("/healthz", response_class=PlainTextResponse)
 def healthz(): return "ok"
@@ -399,6 +404,8 @@ async def ws_chat(ws: WebSocket):
 
             await ws.send_text(ws_event("user_message", text=user_text))
             t0 = time.time()
+            
+            
             try:
                 final_text, trace = await run_llm_tool_loop(
                     user_text=user_text,
@@ -412,6 +419,32 @@ async def ws_chat(ws: WebSocket):
                         await ws.send_text(ws_event("tool_result", name=ev["name"], result=ev["result"]))
                 dt = round((time.time()-t0)*1000)
                 await ws.send_text(ws_event("ai_message", text=final_text, latency_ms=dt))
+                
+                # Execute HTTP upload after query completion if flag is enabled (like old code)
+                upload_downloads_to_s3 = False  # Default to False - only upload when explicitly requested
+                if payload.metadata and payload.metadata.get("s3upload") == True:
+                    upload_downloads_to_s3 = True
+                    log.info("S3 upload flag detected")
+                    await ws.send_text(ws_event("status", message="s3_upload_enabled"))
+                
+                if upload_downloads_to_s3:
+                    log.info("Agent completed, executing HTTP upload...")
+                    try:
+                        upload_result = execute_http_upload_flag()
+                        log.info("HTTP upload function called successfully")
+                        
+                        # Send upload result to frontend
+                        await ws.send_text(ws_event("s3_upload_result", result=upload_result))
+                        
+                        if upload_result and upload_result.get("success"):
+                            log.info(f"HTTP upload completed successfully: {upload_result.get('message')}")
+                        else:
+                            log.warning(f"HTTP upload failed: {upload_result.get('error') if upload_result else 'No result returned'}")
+                            
+                    except Exception as upload_error:
+                        log.error(f"HTTP upload execution failed: {upload_error}")
+                        await ws.send_text(ws_event("s3_upload_error", error=str(upload_error)))
+                
             except Exception as e:
                 await ws.send_text(ws_event("error", where="llm", detail=str(e)))
     except WebSocketDisconnect:

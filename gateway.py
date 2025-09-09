@@ -77,6 +77,7 @@ SERVER_PATHS = {
     "zendesk": str(BASE_DIR / "servers" / "Zendesk_mcp.py"),
     "selenium": str(BASE_DIR / "servers" / "selenium_mcp.py"),
     "captcha_solver": str(BASE_DIR / "servers" / "captcha_solver.py"),
+    # "playwright": str(BASE_DIR / "servers" / "playwright_mcp.py"),
 }
 
 def has_required_tokens(required_vars: list) -> bool:
@@ -99,8 +100,9 @@ def get_server_config(server_name: str) -> dict:
         "whatsapp": {
             "DRY_RUN": os.environ.get("DRY_RUN", "0"), "LOG_LEVEL": "INFO",
             "META_WA_ACCESS_TOKEN": os.environ.get("META_WA_ACCESS_TOKEN", ""),
-            "META_WA_PHONE_NUMBER_ID": os.environ.get("META_WA_PHONE_NUMBER_ID", ""),
-            "META_WA_API_VERSION": os.environ.get("META_WA_API_VERSION", "v21.0"),
+            "META_WA_APP_NAME": os.environ.get("META_WA_APP_NAME", ""),
+            "META_WA_FROM_NUMBER": os.environ.get("META_WA_FROM_NUMBER", ""),
+            "META_WA_API_VERSION": os.environ.get("META_WA_API_VERSION", "1"),
         },
         "sheets": {
             "DRY_RUN": os.environ.get("DRY_RUN", "0"), "LOG_LEVEL": "INFO",
@@ -409,6 +411,11 @@ def get_server_config(server_name: str) -> dict:
             "DRY_RUN": os.environ.get("DRY_RUN", "0"), "LOG_LEVEL": "INFO",
             "GOOGLE_API_KEY": os.environ.get("GOOGLE_API_KEY", ""),
         },
+        # "playwright": {
+        #     "DRY_RUN": os.environ.get("DRY_RUN", "0"), "LOG_LEVEL": "INFO",
+        #     "PYTHONUNBUFFERED": "1",   # Important for stdio pipes
+        #     # Playwright doesn't need any API keys - uses local browser installation
+        # },
     }
     
     config = {
@@ -426,7 +433,7 @@ def build_mcp_config():
     
     # Define server requirements (required environment variables for each server)
     server_requirements = {
-        "whatsapp": ["META_WA_ACCESS_TOKEN", "META_WA_PHONE_NUMBER_ID"],
+        "whatsapp": ["META_WA_ACCESS_TOKEN", "META_WA_APP_NAME", "META_WA_FROM_NUMBER"],
         "sheets": ["GSHEETS_ACCESS_TOKEN", "GSHEETS_REFRESH_TOKEN"],
         "google_slides_mcp": ["GSLIDES_ACCESS_TOKEN", "GSLIDES_REFRESH_TOKEN"],
         "google_forms_mcp": ["GFORMS_ACCESS_TOKEN"],
@@ -484,6 +491,7 @@ def build_mcp_config():
         "zendesk": ["ZENDESK_EMAIL", "ZENDESK_TOKEN", "ZENDESK_SUBDOMAIN"],
         "selenium": [],  # No environment variables required - always load
         "captcha_solver": ["GOOGLE_API_KEY"],
+        # "playwright": [],  # No environment variables required - always load
     }
     
     config = {"mcpServers": {}}
