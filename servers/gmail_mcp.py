@@ -1,20 +1,29 @@
+"""
+Gmail MCP Server - Gmail API Integration
+
+This server provides Gmail functionality using the Gmail API with OAuth2 authentication.
+It requires the following environment variables:
+- GMAIL_ACCESS_TOKEN: OAuth2 access token for Gmail API
+- GMAIL_REFRESH_TOKEN: OAuth2 refresh token for Gmail API
+
+The server uses only Gmail API endpoints and does not require SMTP/IMAP credentials.
+Note: This simplified version requires manual token refresh when the access token expires.
+"""
+
 import os
 import json
-import smtplib
-import imaplib
-import email
+import base64
 import requests
 from typing import Any, Dict, List, Optional
 from fastmcp import FastMCP
 from dotenv import load_dotenv
 from email.mime.text import MIMEText
-
-# Load environment variables from .env file
-load_dotenv()
 from email.mime.multipart import MIMEMultipart
 from email.mime.base import MIMEBase
 from email import encoders
-from email.header import decode_header
+
+# Load environment variables from .env file
+load_dotenv()
 
 import logging
 logging.basicConfig(level=os.getenv("LOG_LEVEL", "INFO"))
@@ -24,40 +33,55 @@ def _dry(name: str, **kwargs):
     logging.info("DRY_RUN: %s(%s)", name, kwargs)
     return {"dry_run": True, "tool": f"gmail_{name}", "args": kwargs}
 
-SMTP_HOST = os.getenv("SMTP_HOST", "smtp.gmail.com")
-SMTP_PORT = int(os.getenv("SMTP_PORT", "587"))
-IMAP_HOST = os.getenv("IMAP_HOST", "imap.gmail.com")
-SMTP_USERNAME = os.getenv("SMTP_USERNAME", "")
-SMTP_PASSWORD = os.getenv("SMTP_PASSWORD", "")
+ACCESS_TOKEN = os.getenv("GMAIL_ACCESS_TOKEN", "")
+REFRESH_TOKEN = os.getenv("GMAIL_REFRESH_TOKEN", "")
 
-if not SMTP_USERNAME or not SMTP_PASSWORD:
-    raise RuntimeError("Set SMTP_USERNAME and SMTP_PASSWORD environment variables")
+if not ACCESS_TOKEN or not REFRESH_TOKEN:
+    raise RuntimeError("Set GMAIL_ACCESS_TOKEN and GMAIL_REFRESH_TOKEN environment variables")
 
 mcp = FastMCP("Gmail MCP (native)")
 
-def _smtp_connection():
-    """Create and authenticate SMTP connection."""
-    server = smtplib.SMTP(SMTP_HOST, SMTP_PORT)
-    server.starttls()
-    server.login(SMTP_USERNAME, SMTP_PASSWORD)
-    return server
+def _get_valid_access_token():
+    """Get a valid access token.
+    
+    Note: This simplified version uses the provided access token directly.
+    When the access token expires, you'll need to manually refresh it using
+    the refresh token and update the GMAIL_ACCESS_TOKEN environment variable.
+    """
+    return ACCESS_TOKEN
 
-def _imap_connection():
-    """Create and authenticate IMAP connection."""
-    mail = imaplib.IMAP4_SSL(IMAP_HOST)
-    mail.login(SMTP_USERNAME, SMTP_PASSWORD)
-    return mail
+def _make_gmail_api_request(endpoint: str, method: str = "GET", data: Optional[Dict] = None, params: Optional[Dict] = None):
+    """Make authenticated request to Gmail API."""
+    access_token = _get_valid_access_token()
+    headers = {
+        "Authorization": f"Bearer {access_token}",
+        "Content-Type": "application/json"
+    }
+    
+    url = f"https://gmail.googleapis.com/gmail/v1/{endpoint}"
+    
+    if method == "GET":
+        response = requests.get(url, headers=headers, params=params)
+    elif method == "POST":
+        response = requests.post(url, headers=headers, json=data)
+    elif method == "DELETE":
+        response = requests.delete(url, headers=headers)
+    else:
+        raise ValueError(f"Unsupported HTTP method: {method}")
+    
+    response.raise_for_status()
+    return response.json()
 
 # Internal helper functions (not decorated)
 def _send_email_internal(recipient: str, subject: str, body: str, 
                         attachment_path: Optional[str] = None) -> Dict[str, Any]:
-    """Internal function to send email."""
+    """Internal function to send email using Gmail API."""
     if DRY_RUN:
         return _dry("send_email", recipient=recipient, subject=subject, body=body, attachment_path=attachment_path)
     
     try:
+        # Create email message
         msg = MIMEMultipart()
-        msg["From"] = SMTP_USERNAME
         msg["To"] = recipient
         msg["Subject"] = subject
         msg.attach(MIMEText(body, "plain"))
@@ -70,11 +94,17 @@ def _send_email_internal(recipient: str, subject: str, body: str,
             part.add_header("Content-Disposition", f"attachment; filename={os.path.basename(attachment_path)}")
             msg.attach(part)
         
-        server = _smtp_connection()
-        server.sendmail(SMTP_USERNAME, recipient, msg.as_string())
-        server.quit()
+        # Encode the message for Gmail API
+        raw_message = base64.urlsafe_b64encode(msg.as_bytes()).decode()
         
-        return {"status": "success", "message": "Email sent successfully"}
+        # Send via Gmail API
+        data = {
+            "raw": raw_message
+        }
+        
+        result = _make_gmail_api_request("users/me/messages/send", "POST", data)
+        
+        return {"status": "success", "message": "Email sent successfully", "message_id": result.get("id")}
     except Exception as e:
         return {"status": "error", "message": f"Failed to send email: {e}"}
 
@@ -115,45 +145,55 @@ def _get_prestaged_attachment_internal(attachment_name: str) -> Dict[str, Any]:
 @mcp.tool()
 def gmail_send_email(recipient: str, subject: str, body: str, 
                     attachment_path: Optional[str] = None) -> Dict[str, Any]:
-    """Send an email via Gmail SMTP."""
+    """Send an email via Gmail API."""
     return _send_email_internal(recipient, subject, body, attachment_path)
 
 @mcp.tool()
 def gmail_fetch_recent_emails(folder: str = "INBOX", limit: int = 10) -> Dict[str, Any]:
-    """Fetch recent emails from Gmail."""
+    """Fetch recent emails from Gmail using Gmail API."""
     if DRY_RUN:
         return _dry("fetch_recent_emails", folder=folder, limit=limit)
     
     try:
-        mail = _imap_connection()
-        mail.select(folder)
-        result, data = mail.search(None, "ALL")
+        # Map folder names to Gmail API query
+        folder_queries = {
+            "INBOX": "in:inbox",
+            "SENT": "in:sent",
+            "DRAFT": "in:draft",
+            "TRASH": "in:trash",
+            "SPAM": "in:spam"
+        }
         
-        if not data or not data[0]:
+        query = folder_queries.get(folder.upper(), "in:inbox")
+        
+        # Get list of messages
+        params = {
+            "q": query,
+            "maxResults": limit
+        }
+        
+        messages_result = _make_gmail_api_request("users/me/messages", params=params)
+        
+        if not messages_result.get("messages"):
             return {"emails": [], "message": "No emails found"}
         
-        email_ids = data[0].split()
-        latest_email_ids = email_ids[-limit:] if len(email_ids) > limit else email_ids
         emails = []
         
-        for email_id in reversed(latest_email_ids):
-            result, data = mail.fetch(email_id, "(RFC822)")
-            raw_email = data[0][1]
-            msg = email.message_from_bytes(raw_email)
+        # Fetch details for each message
+        for message in messages_result["messages"]:
+            message_id = message["id"]
+            message_detail = _make_gmail_api_request(f"users/me/messages/{message_id}")
             
-            subject = decode_header(msg["Subject"])[0][0]
-            if isinstance(subject, bytes):
-                subject = subject.decode()
+            headers = message_detail.get("payload", {}).get("headers", [])
+            header_dict = {header["name"]: header["value"] for header in headers}
             
             emails.append({
-                "id": email_id.decode(),
-                "from": msg.get("From", ""),
-                "subject": subject,
-                "date": msg.get("Date", "")
+                "id": message_id,
+                "from": header_dict.get("From", ""),
+                "subject": header_dict.get("Subject", ""),
+                "date": header_dict.get("Date", ""),
+                "snippet": message_detail.get("snippet", "")
             })
-        
-        mail.close()
-        mail.logout()
         
         return {"emails": emails, "count": len(emails)}
     except Exception as e:
@@ -206,6 +246,65 @@ def gmail_send_email_with_prestaged_attachment(recipient: str, subject: str, bod
         return _send_email_internal(recipient, subject, body, attachment_result["file_path"])
     except Exception as e:
         return {"status": "error", "message": f"Failed to send email with pre-staged attachment: {e}"}
+
+@mcp.tool()
+def gmail_get_profile() -> Dict[str, Any]:
+    """Get Gmail user profile information."""
+    if DRY_RUN:
+        return _dry("get_profile")
+    
+    try:
+        profile = _make_gmail_api_request("users/me/profile")
+        return {
+            "status": "success",
+            "profile": {
+                "email_address": profile.get("emailAddress", ""),
+                "messages_total": profile.get("messagesTotal", 0),
+                "threads_total": profile.get("threadsTotal", 0),
+                "history_id": profile.get("historyId", "")
+            }
+        }
+    except Exception as e:
+        return {"status": "error", "message": f"Failed to get profile: {e}"}
+
+@mcp.tool()
+def gmail_search_emails(query: str, max_results: int = 10) -> Dict[str, Any]:
+    """Search emails using Gmail search syntax."""
+    if DRY_RUN:
+        return _dry("search_emails", query=query, max_results=max_results)
+    
+    try:
+        params = {
+            "q": query,
+            "maxResults": max_results
+        }
+        
+        messages_result = _make_gmail_api_request("users/me/messages", params=params)
+        
+        if not messages_result.get("messages"):
+            return {"emails": [], "message": "No emails found matching query"}
+        
+        emails = []
+        
+        # Fetch details for each message
+        for message in messages_result["messages"]:
+            message_id = message["id"]
+            message_detail = _make_gmail_api_request(f"users/me/messages/{message_id}")
+            
+            headers = message_detail.get("payload", {}).get("headers", [])
+            header_dict = {header["name"]: header["value"] for header in headers}
+            
+            emails.append({
+                "id": message_id,
+                "from": header_dict.get("From", ""),
+                "subject": header_dict.get("Subject", ""),
+                "date": header_dict.get("Date", ""),
+                "snippet": message_detail.get("snippet", "")
+            })
+        
+        return {"emails": emails, "count": len(emails), "query": query}
+    except Exception as e:
+        return {"status": "error", "message": f"Failed to search emails: {e}"}
 
 if __name__ == "__main__":
     mcp.run()

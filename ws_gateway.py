@@ -22,7 +22,7 @@ OPENAI_APIKEY = os.getenv("OPENAI_API_KEY", "")
 TIMEOUT_S     = float(os.getenv("HTTP_TIMEOUT", "45"))
 # --- ADDED: Authentication service URL ---
 UNLEASHX_URL  = os.getenv("UNLEASHX_URL")
-
+WSPORT=os.getenv("WSPORT")
 # -------------------------
 # Setup
 # -------------------------
@@ -333,6 +333,7 @@ class InMsg(BaseModel):
 
 @app.get("/healthz", response_class=PlainTextResponse)
 def healthz(): return "ok"
+
 
 @app.websocket("/ws")
 async def ws_chat(ws: WebSocket):

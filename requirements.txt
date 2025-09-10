@@ -2,7 +2,6 @@
 fastmcp>=2.12.0
 httpx>=0.27
 python-dotenv>=1.0
-google-auth>=2.31
 openai>=1.40.0
 fastapi>=0.95.0
 langfuse>=0.10.0
@@ -26,7 +25,6 @@ stripe>=7.0.0
 # Google Services
 googlemaps>=4.10.0
 google-api-python-client>=2.100.0
-google-auth-oauthlib>=1.0.0
 
 # Web Scraping & Browser Automation
 beautifulsoup4>=4.12.0
@@ -35,3 +33,13 @@ hyperbrowser>=0.55.0
 # Additional API Libraries
 requests>=2.31.0
 aiohttp>=3.8.0
+
+
+#form_api requirements
+fastapi>=0.104.1
+uvicorn[standard]>=0.24.0
+openai>=1.3.7
+python-dotenv>=1.0.0
+httpx>=0.25.2
+pymongo>=4.6.0
+pydantic>=2.5.0 

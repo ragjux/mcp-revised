@@ -117,11 +117,8 @@ def get_server_config(server_name: str) -> dict:
         },
         "gmail": {
             "DRY_RUN": os.environ.get("DRY_RUN", "0"), "LOG_LEVEL": "INFO",
-            "SMTP_HOST": os.environ.get("SMTP_HOST", "smtp.gmail.com"),
-            "SMTP_PORT": os.environ.get("SMTP_PORT", "587"),
-            "IMAP_HOST": os.environ.get("IMAP_HOST", "imap.gmail.com"),
-            "SMTP_USERNAME": os.environ.get("SMTP_USERNAME", ""),
-            "SMTP_PASSWORD": os.environ.get("SMTP_PASSWORD", ""),
+            "GMAIL_ACCESS_TOKEN": os.environ.get("GMAIL_ACCESS_TOKEN", ""),
+            "GMAIL_REFRESH_TOKEN": os.environ.get("GMAIL_REFRESH_TOKEN", ""),
         },
         "chat": {
             "DRY_RUN": os.environ.get("DRY_RUN", "0"), "LOG_LEVEL": "INFO",
@@ -420,7 +417,7 @@ def build_mcp_config():
         "sheets": ["GSHEETS_ACCESS_TOKEN", "GSHEETS_REFRESH_TOKEN"],
         "google_slides_mcp": ["GSLIDES_ACCESS_TOKEN", "GSLIDES_REFRESH_TOKEN"],
         "google_forms_mcp": ["GFORMS_ACCESS_TOKEN"],
-        "gmail": ["SMTP_USERNAME", "SMTP_PASSWORD"],
+        "gmail": ["GMAIL_ACCESS_TOKEN", "GMAIL_REFRESH_TOKEN"],
         "chat": ["GOOGLE_CHAT_ACCESS_TOKEN", "GOOGLE_CHAT_REFRESH_TOKEN"],
         "drive": ["GOOGLE_DRIVE_ACCESS_TOKEN", "GOOGLE_DRIVE_REFRESH_TOKEN"],
         "docs": ["GOOGLE_DOCS_ACCESS_TOKEN", "GOOGLE_DOCS_REFRESH_TOKEN"],
