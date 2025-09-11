@@ -15,14 +15,15 @@ def _dry(name: str, **kwargs):
     return {"dry_run": True, "tool": f"whatsapp_{name}", "args": kwargs}
 
 WA_TOKEN = os.getenv("META_WA_ACCESS_TOKEN", "")
-WA_PHONE_NUMBER_ID = os.getenv("META_WA_PHONE_NUMBER_ID", "")
-WA_API_VERSION = os.getenv("META_WA_API_VERSION", "v21.0")
+WA_APP_NAME = os.getenv("META_WA_APP_NAME", "")
+WA_API_VERSION = os.getenv("META_WA_API_VERSION", "1")
+WA_FROM_NUMBER = os.getenv("META_WA_FROM_NUMBER", "")
 
-if not (WA_TOKEN and WA_PHONE_NUMBER_ID):
-    raise RuntimeError("Set META_WA_ACCESS_TOKEN and META_WA_PHONE_NUMBER_ID in the environment")
+if not (WA_TOKEN and WA_APP_NAME and WA_FROM_NUMBER):
+    raise RuntimeError("Set META_WA_ACCESS_TOKEN, META_WA_APP_NAME, and META_WA_FROM_NUMBER in the environment")
 
-BASE = f"https://graph.facebook.com/{WA_API_VERSION}/{WA_PHONE_NUMBER_ID}"
-HEADERS_JSON = {"Authorization": f"Bearer {WA_TOKEN}", "Content-Type": "application/json"}
+BASE = f"https://pe4pg3.api-in.infobip.com/{WA_APP_NAME}/{WA_API_VERSION}"
+HEADERS_JSON = {"Authorization": f"App {WA_TOKEN}", "Content-Type": "application/json", "Accept": "application/json"}
 
 mcp = FastMCP("Meta WhatsApp MCP")
 
@@ -46,16 +47,43 @@ def wa_send_text(to: str, text: str, preview_url: bool = False) -> Dict[str, Any
     return _post_json(f"{BASE}/messages", payload)
 
 @mcp.tool()
-def wa_send_template(to: str, template_name: str, language: str = "en_US",
-                     components: Optional[List[Dict[str, Any]]] = None) -> Dict[str, Any]:
-    """Send an approved template message."""
+def wa_send_template(to: str, template_name: str, language: str = "en", 
+                     placeholders: Optional[List[str]] = None, 
+                     message_id: Optional[str] = None) -> Dict[str, Any]:
+    """Send an approved template message with the new API structure."""
     if DRY_RUN:
-        return _dry("wa_send_template", to=to, template_name=template_name, language=language, components=components)
-    t = {"name": template_name, "language": {"code": language}}
-    if components: t["components"] = components
-    return _post_json(f"{BASE}/messages", {
-        "messaging_product": "whatsapp", "to": to, "type": "template", "template": t
-    })
+        return _dry("wa_send_template", to=to, template_name=template_name, language=language, placeholders=placeholders, message_id=message_id)
+    
+    # Generate message ID if not provided
+    if not message_id:
+        import uuid
+        message_id = f"msg_{uuid.uuid4().hex[:8]}"
+    
+    # Build template data with placeholders
+    template_data = {}
+    if placeholders:
+        template_data["body"] = {"placeholders": placeholders}
+    
+    payload = {
+        "messages": [
+            {
+                "from": WA_FROM_NUMBER,
+                "to": to,
+                "messageId": message_id,
+                "content": {
+                    "templateName": template_name,
+                    "templateData": template_data,
+                    "language": language
+                }
+            }
+        ]
+    }
+    
+    # Use template-specific headers for the new API
+    with httpx.Client(timeout=30) as c:
+        r = c.post(f"{BASE}/message/template", headers=HEADERS_JSON, json=payload)
+        r.raise_for_status()
+        return r.json()
 
 @mcp.tool()
 def wa_send_image_url(to: str, image_url: str, caption: str = "") -> Dict[str, Any]:
@@ -115,7 +143,7 @@ def wa_upload_media(file_path: str, mime_type: str) -> Dict[str, Any]:
         return _dry("wa_upload_media", file_path=file_path, mime_type=mime_type)
     p = pathlib.Path(file_path)
     if not p.exists(): raise FileNotFoundError(file_path)
-    headers = {"Authorization": f"Bearer {WA_TOKEN}"}
+    headers = {"Authorization": f"App {WA_TOKEN}"}
     with httpx.Client(timeout=60) as c, p.open("rb") as f:
         r = c.post(f"{BASE}/media", headers=headers,
                    files={"file": (p.name, f, mime_type)})

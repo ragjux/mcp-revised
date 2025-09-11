@@ -201,6 +201,12 @@ class MCPChatInterface {
             case 'error':
                 this.handleErrorMessage(data);
                 break;
+            case 's3_upload_result':
+                this.handleS3UploadResult(data);
+                break;
+            case 's3_upload_error':
+                this.handleS3UploadError(data);
+                break;
             default:
                 console.log('Unknown message type:', data.event);
         }
@@ -216,6 +222,12 @@ class MCPChatInterface {
                 break;
             case 'loading_tools':
                 this.showToolStatus('Loading available tools...');
+                break;
+            case 's3_upload_enabled':
+                this.showToolStatus('S3 upload enabled (default) - will execute after query completion');
+                break;
+            case 'executing_s3_upload':
+                this.showToolStatus('Executing S3 upload...');
                 break;
             default:
                 this.showToolStatus(data.message);
@@ -250,9 +262,15 @@ class MCPChatInterface {
         this.autoResizeTextarea();
         this.updateSendButton();
 
-        // Send to server
+        // Send to server with metadata
         try {
-            this.ws.send(JSON.stringify({ message: message }));
+            const payload = { 
+                message: message,
+                metadata: {
+                    s3upload: false  // Don't upload by default
+                }
+            };
+            this.ws.send(JSON.stringify(payload));
         } catch (error) {
             console.error('Failed to send message:', error);
             this.addBotMessage('❌ Failed to send message. Please try again.', null, true);
@@ -466,6 +484,37 @@ class MCPChatInterface {
         
         // Scroll to top
         this.chatMessages.scrollTop = 0;
+    }
+
+    handleS3UploadResult(data) {
+        const result = data.result;
+        console.log('S3 upload result:', result);
+        
+        if (result.success) {
+            const message = `📤 S3 Upload Successful: ${result.message}`;
+            this.addBotMessage(message, null, false);
+            
+            // Show additional details if available
+            if (result.files_uploaded > 0) {
+                const details = `Files uploaded: ${result.files_uploaded}`;
+                if (result.files_failed > 0) {
+                    details += `, Failed: ${result.files_failed}`;
+                }
+                this.addBotMessage(details, null, false);
+            }
+        } else {
+            const message = `❌ S3 Upload Failed: ${result.error || result.message}`;
+            this.addBotMessage(message, null, true);
+        }
+        
+        this.hideToolStatus();
+    }
+
+    handleS3UploadError(data) {
+        console.error('S3 upload error:', data.error);
+        const message = `❌ S3 Upload Error: ${data.error}`;
+        this.addBotMessage(message, null, true);
+        this.hideToolStatus();
     }
 
 }

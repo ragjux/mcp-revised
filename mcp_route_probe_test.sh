@@ -103,7 +103,7 @@ curl -sS "$BASE" \
 #   -H "Accept: application/json,text/event-stream" \
 #   -H "MCP-Protocol-Version: $PROTO" \
 #   -H "Mcp-Session-Id: $SESSION" \
-#   -d '{"jsonrpc":"2.0","id":16,"method":"tools/call","params":{"name":"whatsapp_wa_send_template","arguments":{"to":"919910792473","template_name":"hello_world","language":"en_US"}}}' \
+#   -d '{"jsonrpc":"2.0","id":16,"method":"tools/call","params":{"name":"whatsapp_wa_send_template","arguments":{"to":"919650305671","template_name":"insurance_quotes_utility_02","language":"en","placeholders":["Anshuman","HDFC Plan (Quote - 123)","Cigna Plan (Quote - 123)","Go Digit (Quote - 122)"],"message_id":"test003"}}}' \
 # | awk '/^data:/{sub(/^data:[ ]*/,"");print}' | jq .
 
 # # Test 3: Send image URL

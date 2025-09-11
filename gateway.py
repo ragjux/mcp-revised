@@ -52,7 +52,7 @@ SERVER_PATHS = {
     "facebook_ads": str(BASE_DIR / "servers" / "Facebook_ads_mcp.py"),
     "firecrawl": str(BASE_DIR / "servers" / "FireCrawl_mcp.py"),
     "googlemaps": str(BASE_DIR / "servers" / "Googlemaps_mcp.py"),
-    "hyperbrowser": str(BASE_DIR / "servers" / "HyperBrowser_mcp.py"),
+    # "hyperbrowser": str(BASE_DIR / "servers" / "HyperBrowser_mcp.py"),
     "instantly": str(BASE_DIR / "servers" / "Instantly_mcp.py"),
     "intercom": str(BASE_DIR / "servers" / "Intercom_mcp.py"),
     "jira": str(BASE_DIR / "servers" / "Jira_mcp.py"),
@@ -75,6 +75,9 @@ SERVER_PATHS = {
     "woocommerce": str(BASE_DIR / "servers" / "Woocommerce_mcp.py"),
     "youtube_analytics": str(BASE_DIR / "servers" / "Youtube_analytics_mcp.py"),
     "zendesk": str(BASE_DIR / "servers" / "Zendesk_mcp.py"),
+    # "selenium": str(BASE_DIR / "servers" / "selenium_mcp.py"),
+    "captcha_solver": str(BASE_DIR / "servers" / "captcha_solver.py"),
+    "playwright": str(BASE_DIR / "servers" / "playwright_mcp.py"),
 }
 
 def has_required_tokens(required_vars: list) -> bool:
@@ -97,8 +100,9 @@ def get_server_config(server_name: str) -> dict:
         "whatsapp": {
             "DRY_RUN": os.environ.get("DRY_RUN", "0"), "LOG_LEVEL": "INFO",
             "META_WA_ACCESS_TOKEN": os.environ.get("META_WA_ACCESS_TOKEN", ""),
-            "META_WA_PHONE_NUMBER_ID": os.environ.get("META_WA_PHONE_NUMBER_ID", ""),
-            "META_WA_API_VERSION": os.environ.get("META_WA_API_VERSION", "v21.0"),
+            "META_WA_APP_NAME": os.environ.get("META_WA_APP_NAME", ""),
+            "META_WA_FROM_NUMBER": os.environ.get("META_WA_FROM_NUMBER", ""),
+            "META_WA_API_VERSION": os.environ.get("META_WA_API_VERSION", "1"),
         },
         "sheets": {
             "DRY_RUN": os.environ.get("DRY_RUN", "0"), "LOG_LEVEL": "INFO",
@@ -268,10 +272,10 @@ def get_server_config(server_name: str) -> dict:
             "DRY_RUN": os.environ.get("DRY_RUN", "0"), "LOG_LEVEL": "INFO",
             "GOOGLE_MAPS_API_KEY": os.environ.get("GOOGLE_MAPS_API_KEY", ""),
         },
-        "hyperbrowser": {
-            "DRY_RUN": os.environ.get("DRY_RUN", "0"), "LOG_LEVEL": "INFO",
-            "HYPERBROWSER_API_KEY": os.environ.get("HYPERBROWSER_API_KEY", ""),
-        },
+        # "hyperbrowser": {
+            # "DRY_RUN": os.environ.get("DRY_RUN", "0"), "LOG_LEVEL": "INFO",
+            # "HYPERBROWSER_API_KEY": os.environ.get("HYPERBROWSER_API_KEY", ""),
+        # },
         "instantly": {
             "DRY_RUN": os.environ.get("DRY_RUN", "0"), "LOG_LEVEL": "INFO",
             "INSTANTLY_API_KEY": os.environ.get("INSTANTLY_API_KEY", ""),
@@ -396,6 +400,19 @@ def get_server_config(server_name: str) -> dict:
             "ZENDESK_TOKEN": os.environ.get("ZENDESK_TOKEN", ""),
             "ZENDESK_SUBDOMAIN": os.environ.get("ZENDESK_SUBDOMAIN", ""),
         },
+        # "selenium": {
+        #     "DRY_RUN": os.environ.get("DRY_RUN", "0"), "LOG_LEVEL": "INFO",
+        #     # Selenium doesn't need any API keys - uses local browser installation
+        # },
+        "captcha_solver": {
+            "DRY_RUN": os.environ.get("DRY_RUN", "0"), "LOG_LEVEL": "INFO",
+            "GOOGLE_API_KEY": os.environ.get("GOOGLE_API_KEY", ""),
+        },
+        "playwright": {
+            "DRY_RUN": os.environ.get("DRY_RUN", "0"), "LOG_LEVEL": "INFO",
+            "PYTHONUNBUFFERED": "1",   # Important for stdio pipes
+            # Playwright doesn't need any API keys - uses local browser installation
+        },
     }
     
     config = {
@@ -413,7 +430,7 @@ def build_mcp_config():
     
     # Define server requirements (required environment variables for each server)
     server_requirements = {
-        "whatsapp": ["META_WA_ACCESS_TOKEN", "META_WA_PHONE_NUMBER_ID"],
+        "whatsapp": ["META_WA_ACCESS_TOKEN", "META_WA_APP_NAME", "META_WA_FROM_NUMBER"],
         "sheets": ["GSHEETS_ACCESS_TOKEN", "GSHEETS_REFRESH_TOKEN"],
         "google_slides_mcp": ["GSLIDES_ACCESS_TOKEN", "GSLIDES_REFRESH_TOKEN"],
         "google_forms_mcp": ["GFORMS_ACCESS_TOKEN"],
@@ -446,7 +463,7 @@ def build_mcp_config():
         "facebook_ads": ["FACEBOOK_ACCESS_TOKEN"],
         "firecrawl": ["FIRECRAWL_API_KEY"],
         "googlemaps": ["GOOGLE_MAPS_API_KEY"],
-        "hyperbrowser": ["HYPERBROWSER_API_KEY"],
+        # "hyperbrowser": ["HYPERBROWSER_API_KEY"],
         "instantly": ["INSTANTLY_API_KEY"],
         "intercom": ["INTERCOM_ACCESS_TOKEN"],
         "jira": ["JIRA_HOST", "JIRA_EMAIL", "JIRA_API_TOKEN"],
@@ -469,6 +486,9 @@ def build_mcp_config():
         "woocommerce": ["WOOCOMMERCE_URL", "WOOCOMMERCE_CONSUMER_KEY", "WOOCOMMERCE_CONSUMER_SECRET"],
         "youtube_analytics": ["YOUTUBE_ANALYTICS_CLIENT_ID", "YOUTUBE_ANALYTICS_CLIENT_SECRET"],
         "zendesk": ["ZENDESK_EMAIL", "ZENDESK_TOKEN", "ZENDESK_SUBDOMAIN"],
+        # "selenium": [],  # No environment variables required - always load
+        "captcha_solver": ["GOOGLE_API_KEY"],
+        "playwright": [],  # No environment variables required - always load
     }
     
     config = {"mcpServers": {}}
